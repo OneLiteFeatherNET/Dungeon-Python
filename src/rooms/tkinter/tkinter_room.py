@@ -1,6 +1,7 @@
 """
 Module for TkinterRoom class.
 """
+
 import tkinter as tk
 from rooms.room import Room
 from utils import util_functions, globals as my_globals, room_type

@@ -5,6 +5,7 @@ The floor manages the creation of rooms and contains them.
 It also provides methods to save and load the floor as a json file
 and contains the seed it was created with.
 """
+
 import json
 from typing import List, Tuple, Optional
 

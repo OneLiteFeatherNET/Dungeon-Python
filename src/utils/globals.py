@@ -1,6 +1,7 @@
 """
 This file contains all the global constants used in the project.
 """
+
 import os
 from enum import Enum
 

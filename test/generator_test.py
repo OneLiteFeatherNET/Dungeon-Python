@@ -1,6 +1,7 @@
 """
 This file contains the test cases for the generator class.
 """
+
 import json
 import os
 import random
@@ -33,14 +34,18 @@ def _reachable_coordinates(floor):
     while queue:
         current = queue.popleft()
         neighbour_coordinates = [
-            (current[0] + dx, current[1] + dy) for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
+            (current[0] + dx, current[1] + dy)
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
         ]
         if isinstance(current, TeleportRoom):
             connected_room = rooms_by_id[current.get_connected_room_id()]
             neighbour_coordinates.append((connected_room[0], connected_room[1]))
         for room in rooms:
             room_coordinates = (room[0], room[1])
-            if room_coordinates in neighbour_coordinates and room_coordinates not in seen:
+            if (
+                room_coordinates in neighbour_coordinates
+                and room_coordinates not in seen
+            ):
                 seen.add(room_coordinates)
                 queue.append(room)
     return seen, coordinates
@@ -124,7 +129,9 @@ class GeneratorTest(unittest.TestCase):
         self.assertEqual(RoomType.ITEM_ROOM, floor.get_rooms()[1].get_type())
         self.assertEqual(RoomType.SHOP_ROOM, floor.get_rooms()[2].get_type())
 
-    def test_add_special_rooms_stops_when_there_are_fewer_dead_ends_than_special_rooms(self):
+    def test_add_special_rooms_stops_when_there_are_fewer_dead_ends_than_special_rooms(
+        self,
+    ):
         floor = self._generator._floor
         floor.add_room(2, 2, RoomType.START_ROOM)
         floor.add_room(1, 2, RoomType.DEAD_END)
