@@ -1,5 +1,6 @@
 """Unit tests for the FastAPI controller."""
 
+import inspect
 import json
 import os
 import tempfile
@@ -36,6 +37,17 @@ class ControllerTest(unittest.TestCase):
                 self.assertEqual([], os.listdir(tmp_dir))
             finally:
                 os.chdir(working_directory)
+
+    def test_generate_endpoints_run_outside_the_event_loop(self):
+        # Synchronous endpoints are run in a thread pool by FastAPI,
+        # so a long generation does not block other requests.
+        for endpoint in (
+            controller.generate,
+            controller.generate_with_id,
+            controller.generate_with_id_and_seed,
+        ):
+            with self.subTest(endpoint=endpoint.__name__):
+                self.assertFalse(inspect.iscoroutinefunction(endpoint))
 
     def test_cors_allows_any_origin_without_credentials(self):
         response = self._client.get("/", headers={"Origin": "https://example.com"})
