@@ -37,23 +37,26 @@ def get_picture_for_room_type(room_type: RoomType):
         return None
 
 
-def calculate_room_amount(stage_id: int):
+def calculate_room_amount(stage_id: int, rng: random.Random) -> int:
     """
     Calculates the room amount.
+    @param stage_id: id for the floor
+    @param rng: random number generator to use
     :return: room amount
     """
     return min(
         my_globals.MAX_ROOMS,
-        int(random.randint(0, 1) + 5 + math.floor(stage_id * 10) / 3.0),
+        int(rng.randint(0, 1) + 5 + math.floor(stage_id * 10) / 3.0),
     )
 
 
-def place_room() -> bool:
+def place_room(rng: random.Random) -> bool:
     """
     Checks if a new room should be placed.
+    @param rng: random number generator to use
     :return: True when room should be placed otherwise False
     """
-    return random.randint(1, 50) >= 25
+    return rng.randint(1, 50) >= 25
 
 
 def rgb2hex(r, g, b):

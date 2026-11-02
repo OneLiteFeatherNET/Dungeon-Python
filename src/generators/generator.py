@@ -46,7 +46,7 @@ class Generator:
         self._output_file_name = output_file_name
         self._output_file_path = output_file_path
         self._floor: T = Floor(my_globals.FLOOR_WIDTH, my_globals.FLOOR_HEIGHT, seed)
-        random.seed(seed)
+        self._random = random.Random(seed)
 
     def to_json(self, indent: int) -> str:
         """
@@ -97,7 +97,7 @@ class Generator:
             and (
                 self._floor.count_neighbours(new_room_tuple[0], new_room_tuple[1]) <= 1
             )
-            and util_functions.place_room()
+            and util_functions.place_room(self._random)
         ):
             room_tuple_queue.append(new_room_tuple)
             self._floor.add_to_floor_grid(*new_room_tuple)
@@ -109,14 +109,16 @@ class Generator:
         Generates the rooms for the floor.
         """
         if new_seed is not None:
-            random.seed(new_seed)
+            self._random.seed(new_seed)
             self._seed = new_seed
         self._create_floor()
         floor = self._floor
-        number_of_rooms = util_functions.calculate_room_amount(self._stage_id)
+        number_of_rooms = util_functions.calculate_room_amount(
+            self._stage_id, self._random
+        )
 
         # Add start room
-        start_room: tuple = (random.randint(0, 8), random.randint(0, 7))
+        start_room: tuple = (self._random.randint(0, 8), self._random.randint(0, 7))
         floor.add_room(start_room[0], start_room[1], RoomType.START_ROOM)
         number_of_current_rooms = 1
         room_tuple_queue: deque = deque([])  # Room coordinates
@@ -223,14 +225,14 @@ class Generator:
             self._place_boss_with_teleport_room(boss_room)
             boss_room_placed = True
 
-        elif len(possible_locations) >= 2 and random.randint(0, 10) < 5:
+        elif len(possible_locations) >= 2 and self._random.randint(0, 10) < 5:
             # Create a 2 * 2 boss-room
             boss_room_placed = self._place_big_boss_room(possible_locations, boss_room)
 
         if (
             not boss_room_placed
             and len(possible_locations) >= 1
-            and random.randint(0, 10) < 5
+            and self._random.randint(0, 10) < 5
         ):
             # Create a 1 * 2 boss-room
             floor.add_room_next_to(boss_room, possible_locations[0], RoomType.BOSS_ROOM)

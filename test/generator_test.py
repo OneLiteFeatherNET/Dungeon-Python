@@ -3,6 +3,7 @@ This file contains the test cases for the generator class.
 """
 import json
 import os
+import random
 import tempfile
 import unittest
 from collections import deque
@@ -151,6 +152,17 @@ class GeneratorTest(unittest.TestCase):
         restored = Floor.from_json(self._generator.to_json(1))
 
         self.assertEqual(self._generator._floor.get_rooms(), restored.get_rooms())
+
+    def test_generate_is_not_affected_by_the_global_random_state(self):
+        expected = Generator("rng-seed", "test", "", 1)
+        expected.generate()
+        generator = Generator("rng-seed", "test", "", 1)
+        random.seed(999)
+        random.random()
+
+        generator.generate()
+
+        self.assertEqual(expected._floor.get_rooms(), generator._floor.get_rooms())
 
     def test_negative_stage_id_is_rejected(self):
         with self.assertRaises(ValueError):
