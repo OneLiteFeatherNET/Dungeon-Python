@@ -45,7 +45,7 @@ class Generator:
         self._output_file_name = output_file_name
         self._output_file_path = output_file_path
         self._floor: Floor = Floor(
-            my_globals.FLOOR_WIDTH, my_globals.FLOOR_HEIGHT, seed
+            my_globals.FLOOR_HEIGHT, my_globals.FLOOR_WIDTH, seed
         )
         self._random = random.Random(seed)
 
@@ -112,7 +112,10 @@ class Generator:
         )
 
         # Add start room
-        start_room: tuple = (self._random.randint(0, 8), self._random.randint(0, 7))
+        start_room: tuple = (
+            self._random.randint(0, my_globals.FLOOR_WIDTH - 1),
+            self._random.randint(0, my_globals.FLOOR_HEIGHT - 1),
+        )
         floor.add_room(start_room[0], start_room[1], RoomType.START_ROOM)
         number_of_current_rooms = 1
         room_tuple_queue: deque = deque([])  # Room coordinates

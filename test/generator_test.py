@@ -173,6 +173,12 @@ class GeneratorTest(unittest.TestCase):
 
         self.assertEqual(expected._floor.get_rooms(), generator._floor.get_rooms())
 
+    def test_initial_floor_has_the_floor_size(self):
+        floor = Generator("1", "test")._floor
+
+        self.assertEqual((FLOOR_WIDTH - 1, FLOOR_HEIGHT - 1), floor.bottom_right())
+        self.assertEqual((FLOOR_HEIGHT, FLOOR_WIDTH), floor.get_floor_grid().shape)
+
     def test_negative_stage_id_is_rejected(self):
         with self.assertRaises(ValueError):
             Generator(seed="1", output_file_name="floor", stage_id=-1)
