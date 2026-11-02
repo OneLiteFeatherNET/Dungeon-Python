@@ -42,5 +42,8 @@ jobs:
       - name: Run flake8
         run: flake8 src test
 
+      - name: Check formatting
+        run: black --check src test
+
       - name: Run mypy
         run: mypy
