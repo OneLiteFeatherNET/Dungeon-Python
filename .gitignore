@@ -2,3 +2,4 @@
 /generation
 __pycache__/
 .python-version
+.coverage
