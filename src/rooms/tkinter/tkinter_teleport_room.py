@@ -5,10 +5,9 @@ Module for the TkinterTeleportRoom class.
 from utils import globals as my_globals
 from rooms.teleport_room import TeleportRoom
 from rooms.tkinter.tkinter_room import TkinterRoom
-from utils.room_type import RoomType
 
 
-class TkinterTeleportRoom(TkinterRoom, TeleportRoom):
+class TkinterTeleportRoom(TeleportRoom, TkinterRoom):
     """
     Tkinter version of teleport room.
     """
@@ -24,6 +23,8 @@ class TkinterTeleportRoom(TkinterRoom, TeleportRoom):
     ):
         """
         Creates a new teleport room with the given values.
+        @param teleport_room_id: id of the room the teleport room is connected to
         """
-        super().__init__(x, y, room_id, RoomType.TELEPORT_ROOM, width, height)
-        self._teleport_room_id = teleport_room_id
+        super().__init__(x, y, room_id, teleport_room_id)
+        self._width = width
+        self._height = height
