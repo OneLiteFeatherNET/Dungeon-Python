@@ -4,6 +4,7 @@ The Room class is used to represent a room in the floor.
 A room has a type, coordinates and doors.
 """
 
+import json
 from typing import List
 
 from utils import globals as my_globals
@@ -44,49 +45,26 @@ class Room:
             return self._x
         return self._y
 
-    def to_json(self, indent: int) -> str:
+    def to_dict(self) -> dict:
+        """
+        Creates a dictionary representation of the room object.
+        @return: dictionary with the values of the room
+        """
+        return {
+            "_doors": [door.value for door in self._doors],
+            "_id": self._id,
+            "_type": self._type.value,
+            "_x": self._x,
+            "_y": self._y,
+        }
+
+    def to_json(self, indent: int = 1) -> str:
         """
         Creates a json representation of the room object.
-        @param indent: Amount of indentation the json representation should have
+        @param indent: Number of indentation levels per nesting level
         @return: json string
         """
-        indent_s: str = my_globals.BASE_INDENT * indent
-        json_string: str = (
-            str(my_globals.BASE_INDENT * (indent - 1))
-            + "{\n"
-            + indent_s
-            + '"_doors": [\n'
-        )
-        i = 0
-        while i < len(self._doors):
-            json_string += indent_s + my_globals.BASE_INDENT + str(self._doors[i].value)
-            if i != len(self._doors) - 1:
-                json_string += ",\n"
-            i += 1
-        json_string += (
-            "\n"
-            + indent_s
-            + "],\n"
-            + indent_s
-            + '"_id": '
-            + str(self._id)
-            + ",\n"
-            + indent_s
-            + '"_type": '
-            + str(self._type.value)
-            + ",\n"
-            + indent_s
-            + '"_x": '
-            + str(self._x)
-            + ",\n"
-            + indent_s
-            + '"_y": '
-            + str(self._y)
-            + "\n"
-            + str(my_globals.BASE_INDENT * (indent - 1))
-            + "}"
-        )
-        return json_string
+        return json.dumps(self.to_dict(), indent=len(my_globals.BASE_INDENT) * indent)
 
     @classmethod
     def from_dict(cls, json_dict: dict):
@@ -169,4 +147,4 @@ class Room:
         Returns a string representation of a room object.
         @return: String representation
         """
-        return self.to_json(0)
+        return self.to_json()

@@ -5,6 +5,7 @@ The generation is inspired by the floor generation of the game "The Binding of I
 """
 
 import itertools
+import json
 import os
 import random
 from collections import deque
@@ -48,32 +49,25 @@ class Generator:
         )
         self._random = random.Random(seed)
 
-    def to_json(self, indent: int) -> str:
+    def to_dict(self) -> dict:
+        """
+        Creates a dictionary representation of the generator object.
+        @return: dictionary with the size and the floor of the generator
+        """
+        return {
+            "_width": my_globals.FLOOR_WIDTH,
+            "_height": my_globals.FLOOR_HEIGHT,
+            "_floor": self._floor.to_dict(),
+            "_generated_by": "python",
+        }
+
+    def to_json(self, indent: int = 1) -> str:
         """
         Creates a string representation of the generator object.
+        @param indent: Number of indentation levels per nesting level
         @return: json string of the generator
         """
-        indent_s = my_globals.BASE_INDENT * indent
-
-        j = (
-            "{\n"
-            + indent_s
-            + '"_width": '
-            + str(my_globals.FLOOR_WIDTH)
-            + ",\n"
-            + indent_s
-            + '"_height": '
-            + str(my_globals.FLOOR_HEIGHT)
-            + ",\n"
-            + indent_s
-            + '"_floor": '
-            + self._floor.to_json(indent + 1)
-            + ",\n"
-            + indent_s
-            + '"_generated_by": "python"'
-            + "\n}"
-        )
-        return j
+        return json.dumps(self.to_dict(), indent=len(my_globals.BASE_INDENT) * indent)
 
     def _create_floor(self) -> None:
         """

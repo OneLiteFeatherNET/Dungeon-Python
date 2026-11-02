@@ -10,31 +10,29 @@ class RoomTest(unittest.TestCase):
         self._room = Room(10, 20, 1, RoomType.NORMAL_ROOM)
 
     def test_to_json(self):
-        expected = """  {
-    "_doors": [
-
-    ],
-    "_id": 1,
-    "_type": 0,
-    "_x": 10,
-    "_y": 20
-  }"""
-        self.assertEqual(expected, self._room.to_json(2))
+        expected = """{
+  "_doors": [],
+  "_id": 1,
+  "_type": 0,
+  "_x": 10,
+  "_y": 20
+}"""
+        self.assertEqual(expected, self._room.to_json())
 
     def test_to_json_with_doors(self):
-        expected = """  {
-    "_doors": [
-      0,
-      1
-    ],
-    "_id": 1,
-    "_type": 0,
-    "_x": 10,
-    "_y": 20
-  }"""
+        expected = """{
+  "_doors": [
+    0,
+    1
+  ],
+  "_id": 1,
+  "_type": 0,
+  "_x": 10,
+  "_y": 20
+}"""
         self._room.add_door(DoorFace.TOP)
         self._room.add_door(DoorFace.EAST)
-        self.assertEqual(expected, self._room.to_json(2))
+        self.assertEqual(expected, self._room.to_json())
 
     def test_get_doors(self):
         self.assertEqual([], self._room.get_doors())

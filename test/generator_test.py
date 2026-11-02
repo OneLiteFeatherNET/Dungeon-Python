@@ -242,6 +242,17 @@ class GeneratorTest(unittest.TestCase):
                                 0, floor.count_neighbours(boss_room[0], boss_room[1])
                             )
 
+    def test_to_json_escapes_special_characters_in_the_seed(self):
+        for seed in ('a"b', "a\\b", "a\nb", "ä🙂"):
+            with self.subTest(seed=seed):
+                generator = Generator(seed, "test", "", 1)
+                generator.generate()
+
+                result = json.loads(generator.to_json(1))
+
+                self.assertEqual(seed, result["_floor"]["_seed"])
+                self.assertEqual(seed, Floor.from_json(generator.to_json(1)).seed)
+
     def test_save_writes_the_generated_floor_to_the_given_path(self):
         self._generator.generate()
         with tempfile.TemporaryDirectory() as tmp_dir:
