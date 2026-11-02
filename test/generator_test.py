@@ -264,6 +264,27 @@ class GeneratorTest(unittest.TestCase):
         ids = [room.get_id() for room in restored.get_rooms()]
         self.assertEqual(len(ids), len(set(ids)))
 
+    def test_from_json_restores_teleport_rooms(self):
+        generator = Generator("2", "test", "", 2)
+        generator.generate()
+        original = [
+            room
+            for room in generator._floor.get_rooms()
+            if isinstance(room, TeleportRoom)
+        ]
+        self.assertEqual(1, len(original))
+
+        restored = Floor.from_json(generator.to_json(1))
+
+        teleport_rooms = [
+            room for room in restored.get_rooms() if isinstance(room, TeleportRoom)
+        ]
+        self.assertEqual(1, len(teleport_rooms))
+        self.assertEqual(
+            original[0].get_connected_room_id(),
+            teleport_rooms[0].get_connected_room_id(),
+        )
+
     def test_to_json_escapes_special_characters_in_the_seed(self):
         for seed in ('a"b', "a\\b", "a\nb", "ä🙂"):
             with self.subTest(seed=seed):

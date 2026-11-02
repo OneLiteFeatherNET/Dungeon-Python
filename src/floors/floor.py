@@ -91,7 +91,11 @@ class Floor:
             json_dict["_height"], json_dict["_width"], json_dict["_floor"]["_seed"]
         )
         for room_dict in json_dict["_floor"]["_rooms"]:
-            room = Room.from_dict(room_dict)
+            room = (
+                TeleportRoom.from_dict(room_dict)
+                if "_connected_room_id" in room_dict
+                else Room.from_dict(room_dict)
+            )
             floor._rooms.append(room)
             floor.add_to_floor_grid(room[0], room[1])
         floor._room_id = max((room.get_id() for room in floor._rooms), default=-1) + 1

@@ -3,6 +3,7 @@ Teleport room module.
 """
 
 from rooms.room import Room
+from utils.globals import DoorFace
 from utils.room_type import RoomType
 
 
@@ -31,3 +32,27 @@ class TeleportRoom(Room):
         @return: room id
         """
         return self._connected_room
+
+    def to_dict(self) -> dict:
+        """
+        Creates a dictionary representation of the teleport room object.
+        @return: dictionary with the values of the room and the connected room id
+        """
+        room_dict = super().to_dict()
+        room_dict["_connected_room_id"] = self._connected_room
+        return room_dict
+
+    @classmethod
+    def from_dict(cls, json_dict: dict):
+        """
+        Creates a teleport room object from a dictionary.
+        """
+        room = TeleportRoom(
+            json_dict["_x"],
+            json_dict["_y"],
+            json_dict["_id"],
+            json_dict["_connected_room_id"],
+        )
+        for door in json_dict["_doors"]:
+            room.add_door(DoorFace(door))
+        return room
