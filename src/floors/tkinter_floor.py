@@ -27,7 +27,6 @@ class TkinterFloor(Floor):
         """
         super().__init__(height, width, seed)
         self._canvas = canvas
-        self._first_draw = True
         self.name = name
         self._after_id: Optional[str] = None
 

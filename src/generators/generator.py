@@ -130,12 +130,8 @@ class Generator:
             if len(room_tuple_queue) == 0 and number_of_current_rooms < number_of_rooms:
                 room_tuple_queue.append(room_tuple_list.pop(0))
 
-        # room_tuple_queue.remove(start_room)
         while len(room_tuple_queue) > 0:
             room_tuple_list.append(room_tuple_queue.pop())
-        while len(room_tuple_queue) > 0:
-            room_tuple = room_tuple_queue.pop()
-            room_tuple_list.append(room_tuple)
         room_tuple_list.remove(start_room)
         while len(room_tuple_list) > 0:
             room_tuple = room_tuple_list.pop()
