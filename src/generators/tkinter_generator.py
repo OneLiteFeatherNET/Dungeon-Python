@@ -61,8 +61,7 @@ class TkinterGenerator(Generator):
             my_globals.DEFAULT_FLOOR_NAME + my_globals.JSON_SUFFIX,
             self._seed,
         )
-        self._floor_manager.add_new_floor(self._floor, self._canvas)
-        self._floor = self._floor_manager.get_current_floor()
+        self._floor_manager.add_floor(self._floor)
 
     def _generate_and_draw_floor(self) -> None:
         """
