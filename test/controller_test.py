@@ -37,6 +37,12 @@ class ControllerTest(unittest.TestCase):
             finally:
                 os.chdir(working_directory)
 
+    def test_cors_allows_any_origin_without_credentials(self):
+        response = self._client.get("/", headers={"Origin": "https://example.com"})
+
+        self.assertEqual("*", response.headers["access-control-allow-origin"])
+        self.assertNotIn("access-control-allow-credentials", response.headers)
+
     def test_negative_floor_id_is_rejected(self):
         response = self._client.get("/gen/-1")
 
