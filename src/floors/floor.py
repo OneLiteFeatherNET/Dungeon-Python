@@ -63,33 +63,23 @@ class Floor:
         """
         return self._width - 1, self._height - 1
 
-    def to_json(self, indent: int):
+    def to_dict(self) -> dict:
         """
-        Creates a json string for the current room object.
+        Creates a dictionary representation of the floor object.
+        @return: dictionary with the seed and the rooms of the floor
+        """
+        return {
+            "_seed": self.seed,
+            "_rooms": [room.to_dict() for room in self._rooms],
+        }
+
+    def to_json(self, indent: int = 1) -> str:
+        """
+        Creates a json string for the current floor object.
+        @param indent: Number of indentation levels per nesting level
         @return: json string
         """
-        indent_s: str = my_globals.BASE_INDENT * indent
-        current_index: int = 0
-        max_index: int = len(self._rooms)
-        json_string = (
-            "{\n"
-            + f'{indent_s}"_seed": "{self.seed}",\n'
-            + indent_s
-            + '"_rooms"'
-            + ": ["
-        )
-        if len(self._rooms) == 0:
-            json_string += "]"
-        else:
-            json_string += "\n"
-            for room in self._rooms:
-                if current_index < max_index - 1:
-                    json_string += room.to_json(indent + 2) + ",\n"
-                else:
-                    json_string += room.to_json(indent + 2)
-                current_index += 1
-            json_string += "\n" + indent_s + "]"
-        return json_string + "\n}"
+        return json.dumps(self.to_dict(), indent=len(my_globals.BASE_INDENT) * indent)
 
     @classmethod
     def from_json(cls, json_string: str):
@@ -100,9 +90,15 @@ class Floor:
         floor = Floor(
             json_dict["_height"], json_dict["_width"], json_dict["_floor"]["_seed"]
         )
-        rooms = json_dict["_floor"]["_rooms"]
-        for room in rooms:
-            floor._rooms.append(Room.from_dict(room))
+        for room_dict in json_dict["_floor"]["_rooms"]:
+            room = (
+                TeleportRoom.from_dict(room_dict)
+                if "_connected_room_id" in room_dict
+                else Room.from_dict(room_dict)
+            )
+            floor._rooms.append(room)
+            floor.add_to_floor_grid(room[0], room[1])
+        floor._room_id = max((room.get_id() for room in floor._rooms), default=-1) + 1
         return floor
 
     def add_to_floor_grid(self, x: int, y: int) -> None:

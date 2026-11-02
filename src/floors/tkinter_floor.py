@@ -8,6 +8,7 @@ from typing import List, cast
 
 from floors.floor import Floor
 from rooms.room import Room
+from rooms.teleport_room import TeleportRoom
 
 from rooms.tkinter.tkinter_room import TkinterRoom
 from rooms.tkinter.tkinter_teleport_room import TkinterTeleportRoom
@@ -55,17 +56,27 @@ class TkinterFloor(Floor):
         @param name: name of the floor
         @return: new TkinterFloor
         """
+        # pylint: disable=protected-access
         tkinter_floor = TkinterFloor(
             floor._height,
             floor._width,
             canvas,
             name,
-            floor.seed,  # pylint: disable=protected-access
+            floor.seed,
         )
-        for room in floor._rooms:  # pylint: disable=protected-access
-            tkinter_floor._rooms.append(
-                TkinterRoom.from_room(room)
-            )  # pylint: disable=protected-access
+        for room in floor.get_rooms():
+            tkinter_room: TkinterRoom
+            if isinstance(room, TeleportRoom):
+                tkinter_room = TkinterTeleportRoom(
+                    room[0], room[1], room.get_id(), room.get_connected_room_id()
+                )
+                for door in room.get_doors():
+                    tkinter_room.add_door(door)
+            else:
+                tkinter_room = TkinterRoom.from_room(room)
+            tkinter_floor._rooms.append(tkinter_room)
+        tkinter_floor._floor_grid = floor.get_floor_grid().copy()
+        tkinter_floor._room_id = floor._room_id
         return tkinter_floor
 
     def _tkinter_rooms(self) -> List[TkinterRoom]:
