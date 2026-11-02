@@ -90,9 +90,11 @@ class Floor:
         floor = Floor(
             json_dict["_height"], json_dict["_width"], json_dict["_floor"]["_seed"]
         )
-        rooms = json_dict["_floor"]["_rooms"]
-        for room in rooms:
-            floor._rooms.append(Room.from_dict(room))
+        for room_dict in json_dict["_floor"]["_rooms"]:
+            room = Room.from_dict(room_dict)
+            floor._rooms.append(room)
+            floor.add_to_floor_grid(room[0], room[1])
+        floor._room_id = max((room.get_id() for room in floor._rooms), default=-1) + 1
         return floor
 
     def add_to_floor_grid(self, x: int, y: int) -> None:

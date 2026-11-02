@@ -9,6 +9,8 @@ import tempfile
 import unittest
 from collections import deque
 
+import numpy
+
 from floors.floor import Floor
 from generators.generator import Generator
 from rooms.teleport_room import TeleportRoom
@@ -241,6 +243,26 @@ class GeneratorTest(unittest.TestCase):
                             self.assertEqual(
                                 0, floor.count_neighbours(boss_room[0], boss_room[1])
                             )
+
+    def test_from_json_restores_the_floor_grid(self):
+        self._generator.generate()
+
+        restored = Floor.from_json(self._generator.to_json(1))
+
+        self.assertTrue(
+            numpy.array_equal(
+                self._generator._floor.get_floor_grid(), restored.get_floor_grid()
+            )
+        )
+
+    def test_from_json_continues_the_room_ids(self):
+        self._generator.generate()
+        restored = Floor.from_json(self._generator.to_json(1))
+
+        restored.add_room(0, 0)
+
+        ids = [room.get_id() for room in restored.get_rooms()]
+        self.assertEqual(len(ids), len(set(ids)))
 
     def test_to_json_escapes_special_characters_in_the_seed(self):
         for seed in ('a"b', "a\\b", "a\nb", "ä🙂"):
