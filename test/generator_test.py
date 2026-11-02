@@ -152,6 +152,26 @@ class GeneratorTest(unittest.TestCase):
 
         self.assertEqual(self._generator._floor.get_rooms(), restored.get_rooms())
 
+    def test_negative_stage_id_is_rejected(self):
+        with self.assertRaises(ValueError):
+            Generator(seed="1", output_file_name="floor", stage_id=-1)
+
+    def test_generate_terminates_when_no_secret_room_position_exists(self):
+        # Seed "9" on floor 0 used to loop forever in place_secret_room.
+        generator = Generator(seed="9", output_file_name="floor", stage_id=0)
+
+        generator.generate()
+
+        self.assertGreater(len(generator._floor.get_rooms()), 0)
+
+    def test_generate_terminates_for_many_seeds_on_small_floors(self):
+        for stage_id in (0, 1):
+            for seed in range(200):
+                with self.subTest(stage_id=stage_id, seed=seed):
+                    Generator(
+                        seed=str(seed), output_file_name="floor", stage_id=stage_id
+                    ).generate()
+
     def test_save_writes_the_generated_floor_to_the_given_path(self):
         self._generator.generate()
         with tempfile.TemporaryDirectory() as tmp_dir:

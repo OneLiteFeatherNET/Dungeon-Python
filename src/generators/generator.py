@@ -36,8 +36,10 @@ class Generator:
         Creates a new generator with the given arguments.
         @param seed: seed for generating the floor
         @param output_file_name: name for the outputfile
-        @param stage_id: id for the floor
+        @param stage_id: id for the floor (must be 0 or greater)
         """
+        if stage_id < 0:
+            raise ValueError(f"stage_id must be 0 or greater, got {stage_id}")
         self._stage_id = stage_id
         self._seed = seed
         self._output_file_name = output_file_name
@@ -336,18 +338,15 @@ class Generator:
     def place_secret_room(self) -> None:
         """
         Places a secret room on the floor.
+        If no valid position exists, no secret room is placed.
         """
         floor = self._floor
-        secret_room_placed = False
         neighbour_rooms = 3
-        while not secret_room_placed:
+        while neighbour_rooms > 0:
             for room in reversed(floor.get_rooms()):
                 # Check all neighbours of the room
-                secret_room_placed = self._check_directions_for_secret_room(
-                    room, neighbour_rooms
-                )
-                if secret_room_placed:
-                    break
+                if self._check_directions_for_secret_room(room, neighbour_rooms):
+                    return
             neighbour_rooms -= 1
 
     def _check_directions_for_secret_room(
