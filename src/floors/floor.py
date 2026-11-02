@@ -131,22 +131,10 @@ class Floor:
         @param direction: direction in which the new room is placed
         @param room_type: type for the room
         """
-        if direction == Direction.UP:
-            self.add_room(room[0], room[1] - 1, room_type)
-        elif direction == Direction.DOWN:
-            self.add_room(room[0], room[1] + 1, room_type)
-        elif direction == Direction.LEFT:
-            self.add_room(room[0] - 1, room[1], room_type)
-        elif direction == Direction.RIGHT:
-            self.add_room(room[0] + 1, room[1], room_type)
-        elif direction == Direction.UP_RIGHT:
-            self.add_room(room[0] + 1, room[1] - 1, room_type)
-        elif direction == Direction.UP_LEFT:
-            self.add_room(room[0] - 1, room[1] - 1, room_type)
-        elif direction == Direction.DOWN_RIGHT:
-            self.add_room(room[0] + 1, room[1] + 1, room_type)
-        elif direction == Direction.DOWN_LEFT:
-            self.add_room(room[0] - 1, room[1] + 1, room_type)
+        x, y = utils.util_functions.add_direction_to_coordinates(
+            direction, (room[0], room[1])
+        )
+        self.add_room(x, y, room_type)
 
     def add_teleport_room(self, room: Room) -> None:
         """

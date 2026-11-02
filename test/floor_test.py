@@ -6,6 +6,7 @@ from floors.floor import Floor
 from utils.globals import DoorFace
 from rooms.room import Room
 from utils.room_type import RoomType
+from utils.direction import Direction
 
 
 class FloorTest(unittest.TestCase):
@@ -31,6 +32,19 @@ class FloorTest(unittest.TestCase):
     def test_add_two_floor_grid(self):
         self._floor.add_to_floor_grid(2, 3)
         self.assertTrue(self._floor.contains_room((2, 3)))
+
+    def test_add_room_next_to_places_the_room_in_the_given_direction(self):
+        room = Room(5, 5, 0, RoomType.NORMAL_ROOM)
+        for direction in Direction:
+            with self.subTest(direction=direction):
+                floor = Floor(20, 30, "1")
+
+                floor.add_room_next_to(room, direction, RoomType.BOSS_ROOM)
+
+                expected = (5 + direction.value[0], 5 + direction.value[1])
+                added = floor.get_rooms()[0]
+                self.assertEqual(expected, (added[0], added[1]))
+                self.assertEqual(RoomType.BOSS_ROOM, added.get_type())
 
     def test_add_room(self):
         self._floor.add_room(1, 1)
