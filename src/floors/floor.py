@@ -252,7 +252,7 @@ class Floor:
                 return room
         return None
 
-    def has_boos_room_as_neighbour(self, coordinates: Tuple[int, int]) -> bool:
+    def has_boss_room_as_neighbour(self, coordinates: Tuple[int, int]) -> bool:
         """
         Checks if the given coordinates have a boss room as neighbour.
         @param coordinates: coordinates to check

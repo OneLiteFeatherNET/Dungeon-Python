@@ -336,7 +336,7 @@ class Generator:
                 if (
                     floor.is_within_border(neighbour)
                     and not floor.contains_room(neighbour)
-                    and not floor.has_boos_room_as_neighbour(neighbour)
+                    and not floor.has_boss_room_as_neighbour(neighbour)
                     and floor.count_neighbours(neighbour[0], neighbour[1]) == 1
                 ):
                     distance = util_functions.calculate_distance(boss_room, neighbour)
@@ -381,7 +381,7 @@ class Generator:
             current_neighbour = floor.count_neighbours(neighbour[0], neighbour[1])
             if (
                 current_neighbour >= neighbour_rooms
-                and not floor.has_boos_room_as_neighbour(neighbour)
+                and not floor.has_boss_room_as_neighbour(neighbour)
             ):
                 floor.add_room(neighbour[0], neighbour[1], RoomType.SECRET_ROOM)
                 return True
