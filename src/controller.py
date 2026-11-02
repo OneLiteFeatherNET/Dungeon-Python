@@ -4,8 +4,7 @@ This module contains the FastAPI application and the endpoints for the floor gen
 
 import secrets
 
-from fastapi import FastAPI, Path
-from starlette.responses import Response
+from fastapi import FastAPI, Path, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils import globals as my_globals
