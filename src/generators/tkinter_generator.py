@@ -69,11 +69,12 @@ class TkinterGenerator(Generator):
         """
         Cals the generate method and the draw method of the floor.
         """
+        self._floor.stop_drawing()
         self.generate(self._floor_manager.next_seed.get())
         self._floor_manager.next_seed.set(self._floor_manager.next_seed.get())
         self._floor_manager.next_seed.set(secrets.token_hex(16))
         # self._floors[self._current_floor].draw(tk)
-        self._floor_manager.get_current_floor().draw_thread()
+        self._floor_manager.get_current_floor().draw_step_by_step()
         self._floor = self._floor_manager.get_current_floor()
 
     def open(self) -> None:

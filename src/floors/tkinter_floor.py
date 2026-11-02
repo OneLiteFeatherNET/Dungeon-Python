@@ -2,9 +2,7 @@
 Module for the TkinterFloor class.
 """
 
-import threading
-import time
-from typing import List, cast
+from typing import List, Optional, cast
 
 from floors.floor import Floor
 from rooms.room import Room
@@ -30,7 +28,7 @@ class TkinterFloor(Floor):
         self._canvas = canvas
         self._first_draw = True
         self.name = name
-        self._is_drawing = False
+        self._after_id: Optional[str] = None
 
     def add_room(self, x: int, y: int, room_type=RoomType.NORMAL_ROOM):
         self.add_to_floor_grid(x, y)
@@ -84,29 +82,34 @@ class TkinterFloor(Floor):
         for room in self._tkinter_rooms():
             room.draw(self._canvas)
 
-    def draw_thread(self) -> None:
-        """
-        Starts a new thread to draw the floor step by step.
-        """
-        thread = threading.Thread(target=self.draw_step_by_step)
-        thread.start()
-
     def stop_drawing(self) -> None:
         """
-        Stops the drawing of the floor.
+        Stops the step by step drawing of the floor.
         """
-        self._is_drawing = False
+        if self._after_id is not None:
+            self._canvas.after_cancel(self._after_id)
+            self._after_id = None
 
-    def draw_step_by_step(self) -> None:
+    def draw_step_by_step(self, delay_ms: int = 500) -> None:
         """
-        Draws the floor step by step.
+        Draws the floor room by room using the tkinter event loop.
+        @param delay_ms: delay between two rooms in milliseconds
         """
+        self.stop_drawing()
         self._canvas.delete("all")
         sorted_rooms = sorted(self._tkinter_rooms(), key=lambda r: r.get_id())
-        self._is_drawing = True
-        for room in sorted_rooms:
-            if not self._is_drawing:
-                sorted_rooms.clear()
-                return
-            room.draw(self._canvas)
-            time.sleep(0.5)
+        self._draw_next_room(sorted_rooms, delay_ms)
+
+    def _draw_next_room(self, rooms: List[TkinterRoom], delay_ms: int) -> None:
+        """
+        Draws the first of the given rooms and schedules the remaining rooms.
+        @param rooms: rooms that still have to be drawn
+        @param delay_ms: delay between two rooms in milliseconds
+        """
+        self._after_id = None
+        if len(rooms) == 0:
+            return
+        rooms[0].draw(self._canvas)
+        self._after_id = self._canvas.after(
+            delay_ms, self._draw_next_room, rooms[1:], delay_ms
+        )
