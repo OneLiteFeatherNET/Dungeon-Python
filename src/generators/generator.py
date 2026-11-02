@@ -336,18 +336,15 @@ class Generator:
     def place_secret_room(self) -> None:
         """
         Places a secret room on the floor.
+        If no valid position exists, no secret room is placed.
         """
         floor = self._floor
-        secret_room_placed = False
         neighbour_rooms = 3
-        while not secret_room_placed:
+        while neighbour_rooms > 0:
             for room in reversed(floor.get_rooms()):
                 # Check all neighbours of the room
-                secret_room_placed = self._check_directions_for_secret_room(
-                    room, neighbour_rooms
-                )
-                if secret_room_placed:
-                    break
+                if self._check_directions_for_secret_room(room, neighbour_rooms):
+                    return
             neighbour_rooms -= 1
 
     def _check_directions_for_secret_room(
