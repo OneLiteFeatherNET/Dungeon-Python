@@ -172,6 +172,57 @@ class GeneratorTest(unittest.TestCase):
                         seed=str(seed), output_file_name="floor", stage_id=stage_id
                     ).generate()
 
+    def test_teleported_boss_room_is_moved_to_the_checked_corner(self):
+        self._generator._create_floor()
+        floor = self._generator._floor
+        floor.add_room(1, 0)  # blocks the top left corner
+        floor.add_room(4, 4)
+        boss_room = floor.get_rooms()[1]
+
+        self._generator._place_boss_with_teleport_room(boss_room)
+
+        self.assertEqual((FLOOR_WIDTH - 1, 0), (boss_room[0], boss_room[1]))
+        self.assertTrue(floor.contains_room((FLOOR_WIDTH - 1, 0)))
+        teleport_room = floor.get_rooms()[-1]
+        self.assertIsInstance(teleport_room, TeleportRoom)
+        self.assertEqual((4, 4), (teleport_room[0], teleport_room[1]))
+        self.assertEqual(boss_room.get_id(), teleport_room.get_connected_room_id())
+
+    def test_boss_room_stays_when_there_is_no_free_location(self):
+        self._generator._create_floor()
+        floor = self._generator._floor
+        for x in range(FLOOR_WIDTH):
+            for y in range(FLOOR_HEIGHT):
+                floor.add_to_floor_grid(x, y)
+        floor.add_room(4, 4)
+        boss_room = floor.get_rooms()[0]
+
+        self._generator._place_boss_with_teleport_room(boss_room)
+
+        self.assertEqual((4, 4), (boss_room[0], boss_room[1]))
+        self.assertEqual(1, len(floor.get_rooms()))
+
+    def test_teleported_boss_rooms_are_isolated_and_on_the_grid(self):
+        for stage_id in (0, 1, 2, 3):
+            for seed in range(200):
+                with self.subTest(stage_id=stage_id, seed=seed):
+                    generator = Generator(str(seed), "test", "", stage_id)
+                    generator.generate()
+                    floor = generator._floor
+                    rooms = floor.get_rooms()
+                    coordinates = [(room[0], room[1]) for room in rooms]
+                    self.assertEqual(len(coordinates), len(set(coordinates)))
+                    for point in coordinates:
+                        self.assertTrue(floor.contains_room(point))
+                    rooms_by_id = {room.get_id(): room for room in rooms}
+                    for room in rooms:
+                        if isinstance(room, TeleportRoom):
+                            boss_room = rooms_by_id[room.get_connected_room_id()]
+                            self.assertEqual(RoomType.BOSS_ROOM, boss_room.get_type())
+                            self.assertEqual(
+                                0, floor.count_neighbours(boss_room[0], boss_room[1])
+                            )
+
     def test_save_writes_the_generated_floor_to_the_given_path(self):
         self._generator.generate()
         with tempfile.TemporaryDirectory() as tmp_dir:
