@@ -3,6 +3,7 @@
 import importlib.util
 import tempfile
 import unittest
+from unittest import mock
 
 from utils import globals as my_globals
 
@@ -63,6 +64,28 @@ class TkinterGeneratorTest(unittest.TestCase):
 
         self._press("<Right>")
         self.assertIs(second, self._generator._floor)
+
+    def test_menu_shortcuts_are_bound(self):
+        generator = self._generator
+        generator.create_menu_bar()
+        shortcuts = {
+            "<Control-o>": "open",
+            "<Control-s>": "_save_current_floor",
+            "<Control-S>": "save",
+            "<Control-q>": "quit",
+        }
+        for key, method in shortcuts.items():
+            with self.subTest(key=key), mock.patch.object(generator, method) as m:
+                self._press(key)
+                m.assert_called_once()
+
+        with mock.patch.object(generator._theme_handler, "switch_theme") as m:
+            self._press("<Control-t>")
+            m.assert_called_once()
+
+        with mock.patch("rooms.tkinter.legend_window.display_legend") as m:
+            self._press("<F1>")
+            m.assert_called_once()
 
 
 if __name__ == "__main__":

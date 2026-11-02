@@ -241,9 +241,7 @@ class TkinterGenerator(Generator):
         menu_bar.add_command(label="Open", command=self.open, accelerator="Ctrl+o")
         menu_bar.add_command(
             label="Save",
-            command=lambda: self.save(
-                os.path.join(self._output_file_path, self._output_file_name)
-            ),
+            command=self._save_current_floor,
             accelerator="Ctrl+s",
         )
         menu_bar.add_command(
@@ -258,3 +256,15 @@ class TkinterGenerator(Generator):
             label="Legend", command=legend_window.display_legend, accelerator="F1"
         )
         menu_bar.add_command(label="Exit", command=self.quit, accelerator="Ctrl+q")
+        self._tk.bind("<Control-o>", lambda event: self.open())
+        self._tk.bind("<Control-s>", lambda event: self._save_current_floor())
+        self._tk.bind("<Control-S>", lambda event: self.save())
+        self._tk.bind("<Control-t>", lambda event: self._theme_handler.switch_theme())
+        self._tk.bind("<F1>", lambda event: legend_window.display_legend())
+        self._tk.bind("<Control-q>", lambda event: self.quit())
+
+    def _save_current_floor(self) -> None:
+        """
+        Saves the current floor to the current output file.
+        """
+        self.save(os.path.join(self._output_file_path, self._output_file_name))
