@@ -41,7 +41,7 @@ class TkinterGenerator(Generator):
         hex_color = util_functions.rgb2hex(color[0], color[1], color[2])
         self._canvas = tk.Canvas(
             height=my_globals.FLOOR_HEIGHT * my_globals.ROOM_HEIGHT,
-            width=my_globals.ROOM_WIDTH * my_globals.ROOM_WIDTH,
+            width=my_globals.FLOOR_WIDTH * my_globals.ROOM_WIDTH,
             background=hex_color,
         )
         self._path = tk.StringVar()
