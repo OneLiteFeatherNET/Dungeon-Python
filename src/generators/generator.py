@@ -4,11 +4,12 @@ A generator generates a floor with the given seed and saves it as a json file.
 The generation is inspired by the floor generation of the game "The Binding of Isaac".
 """
 
+import itertools
 import os
 import random
 from collections import deque
 from datetime import datetime
-from typing import List, TypeVar, Tuple
+from typing import List, Optional, TypeVar, Tuple
 
 from floors.floor import Floor
 from rooms.room import Room
@@ -266,26 +267,40 @@ class Generator:
 
     def _place_boss_with_teleport_room(self, boss_room) -> None:
         """
-        Searches for a free places in the corners of the floor to replace the boss room.
-        @param boss_room: boss room to replace
+        Moves the boss room to a free location without neighbours
+        and places a teleport room at its old position.
+        If no such location exists, the boss room stays where it is.
+        @param boss_room: boss room to move
         """
+        destination = self._find_teleport_destination()
+        if destination is None:
+            return
         floor = self._floor
         floor.add_teleport_room(boss_room)
-        if self._check_if_not_contains_room_and_has_no_neighbours(floor.top_left()):
-            boss_room.set_cord(0, 0)
+        boss_room.set_cord(*destination)
+        floor.add_to_floor_grid(*destination)
 
-        elif self._check_if_not_contains_room_and_has_no_neighbours(floor.top_right()):
-            boss_room.set_cord(0, my_globals.FLOOR_HEIGHT - 1)
-
-        elif self._check_if_not_contains_room_and_has_no_neighbours(
-            floor.bottom_left()
-        ):
-            boss_room.set_cord(my_globals.FLOOR_WIDTH - 1, my_globals.FLOOR_HEIGHT - 1)
-
-        elif self._check_if_not_contains_room_and_has_no_neighbours(
-            floor.bottom_right()
-        ):
-            boss_room.set_cord(my_globals.FLOOR_WIDTH - 1, 0)
+    def _find_teleport_destination(self) -> Optional[Tuple[int, int]]:
+        """
+        Searches for a free location without neighbours, preferring the corners.
+        @return: coordinates of the location or None if there is none
+        """
+        floor = self._floor
+        corners = (
+            floor.top_left(),
+            floor.top_right(),
+            floor.bottom_left(),
+            floor.bottom_right(),
+        )
+        all_points = (
+            (x, y)
+            for y in range(my_globals.FLOOR_HEIGHT)
+            for x in range(my_globals.FLOOR_WIDTH)
+        )
+        for point in itertools.chain(corners, all_points):
+            if self._check_if_not_contains_room_and_has_no_neighbours(point):
+                return point
+        return None
 
     def _check_if_not_contains_room_and_has_no_neighbours(
         self, point: Tuple[int, int]
