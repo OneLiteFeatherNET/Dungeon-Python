@@ -3,7 +3,7 @@ This module contains the FastAPI application and the endpoints for the floor gen
 """
 import secrets
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Path
 from starlette.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -30,7 +30,7 @@ async def root():
 
 
 @app.get(_GENERATE + "/{floor_id}")
-async def generate_with_id(floor_id: int) -> FileResponse:
+async def generate_with_id(floor_id: int = Path(ge=0)) -> FileResponse:
     """
     This endpoint generates a floor with the given id
     and returns it in a FileResponse as a json file.
@@ -46,7 +46,9 @@ async def generate_with_id(floor_id: int) -> FileResponse:
 
 
 @app.get(_GENERATE + "/{floor_id}/{seed}")
-async def generate_with_id_and_seed(floor_id: int, seed: str) -> FileResponse:
+async def generate_with_id_and_seed(
+    floor_id: int = Path(ge=0), seed: str = Path()
+) -> FileResponse:
     """
     This endpoint generates a floor with the given id
     and seed and returns it in a FileResponse as a json file.

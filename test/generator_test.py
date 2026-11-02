@@ -152,6 +152,10 @@ class GeneratorTest(unittest.TestCase):
 
         self.assertEqual(self._generator._floor.get_rooms(), restored.get_rooms())
 
+    def test_negative_stage_id_is_rejected(self):
+        with self.assertRaises(ValueError):
+            Generator(seed="1", output_file_name="floor", stage_id=-1)
+
     def test_generate_terminates_when_no_secret_room_position_exists(self):
         # Seed "9" on floor 0 used to loop forever in place_secret_room.
         generator = Generator(seed="9", output_file_name="floor", stage_id=0)

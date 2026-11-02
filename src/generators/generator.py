@@ -36,8 +36,10 @@ class Generator:
         Creates a new generator with the given arguments.
         @param seed: seed for generating the floor
         @param output_file_name: name for the outputfile
-        @param stage_id: id for the floor
+        @param stage_id: id for the floor (must be 0 or greater)
         """
+        if stage_id < 0:
+            raise ValueError(f"stage_id must be 0 or greater, got {stage_id}")
         self._stage_id = stage_id
         self._seed = seed
         self._output_file_name = output_file_name
