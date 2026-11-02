@@ -66,8 +66,12 @@ class RoomTest(unittest.TestCase):
         self.assertEqual(20, self._room[1])
 
     def test_get_cord_with_exception(self):
-        with self.assertRaises(ValueError, msg="20 is not a valid index"):
+        with self.assertRaises(IndexError, msg="20 is not a valid index"):
             _ = self._room[20]
+
+    def test_room_can_be_unpacked_into_its_coordinates(self):
+        x, y = self._room
+        self.assertEqual((10, 20), (x, y))
 
 
 if __name__ == "__main__":
