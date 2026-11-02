@@ -4,7 +4,7 @@ This module contains the function to display the legend on the canvas.
 
 import tkinter as tk
 
-import src.utils.globals as my_globals
+import utils.globals as my_globals
 from utils import util_functions
 from utils.room_type import RoomType, room_colors, room_names
 

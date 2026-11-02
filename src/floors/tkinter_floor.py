@@ -4,6 +4,7 @@ Module for the TkinterFloor class.
 
 import threading
 import time
+from typing import List, cast
 
 from floors.floor import Floor
 from rooms.room import Room
@@ -67,13 +68,20 @@ class TkinterFloor(Floor):
             )  # pylint: disable=protected-access
         return tkinter_floor
 
+    def _tkinter_rooms(self) -> List[TkinterRoom]:
+        """
+        Returns the rooms of the floor, which are all tkinter rooms.
+        @return: rooms
+        """
+        return cast(List[TkinterRoom], self._rooms)
+
     def draw(self) -> None:
         """
         Draws the floor with all the rooms on the canvas.
         """
         self.stop_drawing()
         self._canvas.delete("all")
-        for room in self._rooms:
+        for room in self._tkinter_rooms():
             room.draw(self._canvas)
 
     def draw_thread(self) -> None:
@@ -94,7 +102,7 @@ class TkinterFloor(Floor):
         Draws the floor step by step.
         """
         self._canvas.delete("all")
-        sorted_rooms = sorted(self._rooms, key=lambda r: r.get_id())
+        sorted_rooms = sorted(self._tkinter_rooms(), key=lambda r: r.get_id())
         self._is_drawing = True
         for room in sorted_rooms:
             if not self._is_drawing:

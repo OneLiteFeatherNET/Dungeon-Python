@@ -4,6 +4,8 @@ The Room class is used to represent a room in the floor.
 A room has a type, coordinates and doors.
 """
 
+from typing import List
+
 from utils import globals as my_globals
 from utils.globals import DoorFace, MAX_DOOR_AMOUNT
 from utils.room_type import RoomType
@@ -27,7 +29,7 @@ class Room:
         self._y: int = y
         self._id: int = room_id
         self._type = room_type
-        self._doors = []
+        self._doors: List[DoorFace] = []
 
     def __getitem__(self, index: int) -> int:
         """
@@ -40,8 +42,7 @@ class Room:
             raise ValueError(str(index) + "is not a valid index")
         if index == 0:
             return self._x
-        if index == 1:
-            return self._y
+        return self._y
 
     def to_json(self, indent: int) -> str:
         """

@@ -1,6 +1,7 @@
 """
 Teleport room module.
 """
+
 from rooms.room import Room
 from utils.room_type import RoomType
 

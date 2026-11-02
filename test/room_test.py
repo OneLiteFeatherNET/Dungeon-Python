@@ -69,7 +69,7 @@ class RoomTest(unittest.TestCase):
 
     def test_get_cord_with_exception(self):
         with self.assertRaises(ValueError, msg="20 is not a valid index"):
-            var = self._room[20]
+            _ = self._room[20]
 
 
 if __name__ == "__main__":
