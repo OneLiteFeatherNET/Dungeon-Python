@@ -219,7 +219,7 @@ class TkinterGenerator(Generator):
         button_next = ttk.Button(button_frame, text="->", command=self._increase_floor)
         button_next.pack(side=tk.LEFT, padx=10)
         # Right arrow to increase
-        self._tk.bind("<Right>", lambda event: self._floor_manager.increase_floor())
+        self._tk.bind("<Right>", lambda event: self._increase_floor())
         # Next seed entry
         next_seed_label = ttk.Label(button_frame, text="Next seed: ")
         next_seed_label.pack(side=tk.LEFT, padx=10)

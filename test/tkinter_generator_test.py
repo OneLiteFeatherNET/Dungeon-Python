@@ -45,6 +45,25 @@ class TkinterGeneratorTest(unittest.TestCase):
             my_globals.FLOOR_HEIGHT * my_globals.ROOM_HEIGHT, int(canvas.cget("height"))
         )
 
+    def _press(self, key: str) -> None:
+        tk = self._generator._tk
+        tk.update()
+        tk.focus_force()
+        tk.event_generate(key, when="now")
+        tk.update()
+
+    def test_arrow_keys_switch_the_current_floor(self):
+        self._generator.add_buttons()
+        first = self._generator._floor
+        self._generator.generate("2")
+        second = self._generator._floor
+
+        self._press("<Left>")
+        self.assertIs(first, self._generator._floor)
+
+        self._press("<Right>")
+        self.assertIs(second, self._generator._floor)
+
 
 if __name__ == "__main__":
     unittest.main()
