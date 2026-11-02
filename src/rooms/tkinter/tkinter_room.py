@@ -53,6 +53,7 @@ class TkinterRoom(Room):
         """
         Creates a new TkinterRoom from a room.
         """
-        return TkinterRoom(
-            room._x, room._y, room._id, room._type
-        )  # pylint: disable=protected-access
+        tkinter_room = TkinterRoom(room[0], room[1], room.get_id(), room.get_type())
+        for door in room.get_doors():
+            tkinter_room.add_door(door)
+        return tkinter_room
