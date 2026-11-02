@@ -1,3 +1,8 @@
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["test"]
+
+[tool.mypy]
+mypy_path = "src"
+explicit_package_bases = true
+files = ["src"]
