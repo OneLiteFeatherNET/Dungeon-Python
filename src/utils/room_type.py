@@ -38,17 +38,12 @@ class RoomType(Enum):
         - Secret room
         @return: True if special otherwise False
         """
-        switcher = {
-            self.NORMAL_ROOM: False,
-            self.DEAD_END: False,
-            self.ITEM_ROOM: True,
-            self.SHOP_ROOM: True,
-            self.START_ROOM: False,
-            self.TELEPORT_ROOM: False,
-            self.BOSS_ROOM: True,
-            self.SECRET_ROOM: True,
-        }
-        return switcher[self]
+        return self in (
+            RoomType.ITEM_ROOM,
+            RoomType.SHOP_ROOM,
+            RoomType.BOSS_ROOM,
+            RoomType.SECRET_ROOM,
+        )
 
     def get_color(self) -> Color:
         """

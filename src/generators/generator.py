@@ -45,7 +45,7 @@ class Generator:
         self._output_file_name = output_file_name
         self._output_file_path = output_file_path
         self._floor: Floor = Floor(
-            my_globals.FLOOR_WIDTH, my_globals.FLOOR_HEIGHT, seed
+            my_globals.FLOOR_HEIGHT, my_globals.FLOOR_WIDTH, seed
         )
         self._random = random.Random(seed)
 
@@ -112,7 +112,10 @@ class Generator:
         )
 
         # Add start room
-        start_room: tuple = (self._random.randint(0, 8), self._random.randint(0, 7))
+        start_room: tuple = (
+            self._random.randint(0, my_globals.FLOOR_WIDTH - 1),
+            self._random.randint(0, my_globals.FLOOR_HEIGHT - 1),
+        )
         floor.add_room(start_room[0], start_room[1], RoomType.START_ROOM)
         number_of_current_rooms = 1
         room_tuple_queue: deque = deque([])  # Room coordinates
@@ -130,12 +133,8 @@ class Generator:
             if len(room_tuple_queue) == 0 and number_of_current_rooms < number_of_rooms:
                 room_tuple_queue.append(room_tuple_list.pop(0))
 
-        # room_tuple_queue.remove(start_room)
         while len(room_tuple_queue) > 0:
             room_tuple_list.append(room_tuple_queue.pop())
-        while len(room_tuple_queue) > 0:
-            room_tuple = room_tuple_queue.pop()
-            room_tuple_list.append(room_tuple)
         room_tuple_list.remove(start_room)
         while len(room_tuple_list) > 0:
             room_tuple = room_tuple_list.pop()
@@ -336,7 +335,7 @@ class Generator:
                 if (
                     floor.is_within_border(neighbour)
                     and not floor.contains_room(neighbour)
-                    and not floor.has_boos_room_as_neighbour(neighbour)
+                    and not floor.has_boss_room_as_neighbour(neighbour)
                     and floor.count_neighbours(neighbour[0], neighbour[1]) == 1
                 ):
                     distance = util_functions.calculate_distance(boss_room, neighbour)
@@ -381,7 +380,7 @@ class Generator:
             current_neighbour = floor.count_neighbours(neighbour[0], neighbour[1])
             if (
                 current_neighbour >= neighbour_rooms
-                and not floor.has_boos_room_as_neighbour(neighbour)
+                and not floor.has_boss_room_as_neighbour(neighbour)
             ):
                 floor.add_room(neighbour[0], neighbour[1], RoomType.SECRET_ROOM)
                 return True
@@ -398,7 +397,6 @@ class Generator:
             n = self._output_file_name + time + my_globals.JSON_SUFFIX
             output = os.path.join(self._output_file_path, n)
 
-        f = open(output, "w", encoding="utf-8")
-        f.write(self.to_json(1))
-        f.close()
+        with open(output, "w", encoding="utf-8") as file:
+            file.write(self.to_json(1))
         return output

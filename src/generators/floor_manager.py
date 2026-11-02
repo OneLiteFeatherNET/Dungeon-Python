@@ -7,8 +7,6 @@ import tkinter as tk
 from collections import deque
 from typing import Deque
 
-from utils import globals as my_globals
-
 from floors.tkinter_floor import TkinterFloor
 
 
@@ -29,26 +27,6 @@ class FloorManager:
         self.current_floor_seed_var = tk.StringVar()
         self.next_seed = tk.StringVar()
         self.next_seed.set(secrets.token_hex(16))
-
-    def add_new_floor(self, floor: TkinterFloor, canvas) -> None:
-        """
-        Adds a new floor to the floor manager.
-        @param floor: floor to add
-        @param canvas: canvas to draw on
-        """
-        self._floors.append(
-            TkinterFloor(
-                my_globals.FLOOR_HEIGHT,
-                my_globals.FLOOR_WIDTH,
-                canvas=canvas,
-                name=my_globals.DEFAULT_FLOOR_NAME + my_globals.JSON_SUFFIX,
-                seed=floor.seed,
-            )
-        )
-        self.current_floor_index = len(self._floors) - 1
-        current = self._floors[self.current_floor_index]
-        self.current_floor_name.set(current.name)
-        self.current_floor_seed_var.set(current.seed)
 
     def add_floor(self, floor: TkinterFloor) -> None:
         """

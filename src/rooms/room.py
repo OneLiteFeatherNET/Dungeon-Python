@@ -40,7 +40,7 @@ class Room:
         @return: Returns x if index equals 0 and y if index equals 1
         """
         if index < 0 or index > 1:
-            raise ValueError(str(index) + "is not a valid index")
+            raise IndexError(f"{index} is not a valid index")
         if index == 0:
             return self._x
         return self._y

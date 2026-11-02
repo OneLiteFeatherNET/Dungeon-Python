@@ -46,7 +46,6 @@ class TkinterGenerator(Generator):
         )
         self._path = tk.StringVar()
         self._path.set(self._output_file_path)
-        self._menu_bar = tk.Menu(self._tk)
         self._theme_handler = ThemeHandler(self._tk, self._canvas)
         self._floor_manager = FloorManager(output_file_name)
         self._tk.protocol("WM_DELETE_WINDOW", self.quit)
@@ -62,18 +61,15 @@ class TkinterGenerator(Generator):
             my_globals.DEFAULT_FLOOR_NAME + my_globals.JSON_SUFFIX,
             self._seed,
         )
-        self._floor_manager.add_new_floor(self._floor, self._canvas)
-        self._floor = self._floor_manager.get_current_floor()
+        self._floor_manager.add_floor(self._floor)
 
     def _generate_and_draw_floor(self) -> None:
         """
-        Cals the generate method and the draw method of the floor.
+        Calls the generate method and the draw method of the floor.
         """
         self._floor.stop_drawing()
         self.generate(self._floor_manager.next_seed.get())
-        self._floor_manager.next_seed.set(self._floor_manager.next_seed.get())
         self._floor_manager.next_seed.set(secrets.token_hex(16))
-        # self._floors[self._current_floor].draw(tk)
         self._floor_manager.get_current_floor().draw_step_by_step()
         self._floor = self._floor_manager.get_current_floor()
 
@@ -84,7 +80,7 @@ class TkinterGenerator(Generator):
         """
         options = util_functions.json_file_options.copy()
         options["initialdir"] = self._output_file_path
-        options["title"] = "Open File"
+        options["title"] = util_functions.open_file_text
         path = filedialog.askopenfilename(**options)
         if len(path) > 0:
             self._output_file_path = os.path.dirname(path)
@@ -130,7 +126,7 @@ class TkinterGenerator(Generator):
         options = util_functions.json_file_options.copy()
         options["initialdir"] = self._output_file_path
         options["initialfile"] = self._output_file_name
-        options["title"] = "Save File"
+        options["title"] = util_functions.save_file_text
         file_path = filedialog.asksaveasfilename(**options)
         if len(file_path) > 0:
             self._output_file_path = os.path.dirname(file_path)
