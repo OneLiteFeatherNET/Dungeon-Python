@@ -15,4 +15,4 @@ jobs:
         if: github.head_ref == 'master'
         with:
           comment: |
-            Hi there! :wave: This PR is targeting the `master` branch, which is not allowed. Please target the `develop` branch instead. Thanks!
+            Hi there! :wave: This PR is targeting the `master` branch, which is not allowed. Please target the `dev` branch instead. Thanks!
