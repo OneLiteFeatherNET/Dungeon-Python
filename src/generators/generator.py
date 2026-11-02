@@ -397,7 +397,6 @@ class Generator:
             n = self._output_file_name + time + my_globals.JSON_SUFFIX
             output = os.path.join(self._output_file_path, n)
 
-        f = open(output, "w", encoding="utf-8")
-        f.write(self.to_json(1))
-        f.close()
+        with open(output, "w", encoding="utf-8") as file:
+            file.write(self.to_json(1))
         return output
