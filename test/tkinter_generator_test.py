@@ -87,6 +87,23 @@ class TkinterGeneratorTest(unittest.TestCase):
             self._press("<F1>")
             m.assert_called_once()
 
+    def test_enter_in_the_next_seed_entry_generates_a_floor_with_that_seed(self):
+        generator = self._generator
+        generator.add_buttons()
+        generator._floor_manager.next_seed.set("entered-seed")
+        entry = generator._next_seed_entry
+
+        with mock.patch("floors.tkinter_floor.TkinterFloor.draw_thread"):
+            generator._tk.update()
+            entry.focus_force()
+            entry.event_generate("<Return>", when="now")
+            generator._tk.update()
+
+        self.assertEqual("entered-seed", generator._floor.seed)
+        self.assertEqual(
+            "entered-seed", generator._floor_manager.current_floor_seed_var.get()
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

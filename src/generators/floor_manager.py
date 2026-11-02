@@ -98,9 +98,3 @@ class FloorManager:
             current_floor.draw()
             self.current_floor_name.set(current_floor.name)
             self.current_floor_seed_var.set(self.get_current_floor().seed)
-
-    def set_next_seed(self) -> None:
-        """
-        Sets the next seed to the current seed.
-        """
-        self.current_floor_seed_var.set(self.next_seed.get())

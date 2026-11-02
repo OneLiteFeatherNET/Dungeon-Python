@@ -223,13 +223,14 @@ class TkinterGenerator(Generator):
         # Next seed entry
         next_seed_label = ttk.Label(button_frame, text="Next seed: ")
         next_seed_label.pack(side=tk.LEFT, padx=10)
-        next_seed_entry = ttk.Entry(
+        self._next_seed_entry = ttk.Entry(
             button_frame, textvariable=self._floor_manager.next_seed
         )
-        next_seed_entry.bind(
-            "<Return>", lambda event: self._floor_manager.set_next_seed()
+        # Enter generates a floor with the entered seed
+        self._next_seed_entry.bind(
+            "<Return>", lambda event: self._generate_and_draw_floor()
         )
-        next_seed_entry.pack(side=tk.LEFT, padx=10)
+        self._next_seed_entry.pack(side=tk.LEFT, padx=10)
 
     def create_menu_bar(self) -> None:
         """
