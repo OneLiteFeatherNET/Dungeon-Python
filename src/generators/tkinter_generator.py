@@ -41,7 +41,7 @@ class TkinterGenerator(Generator):
         hex_color = util_functions.rgb2hex(color[0], color[1], color[2])
         self._canvas = tk.Canvas(
             height=my_globals.FLOOR_HEIGHT * my_globals.ROOM_HEIGHT,
-            width=my_globals.ROOM_WIDTH * my_globals.ROOM_WIDTH,
+            width=my_globals.FLOOR_WIDTH * my_globals.ROOM_WIDTH,
             background=hex_color,
         )
         self._path = tk.StringVar()
@@ -69,11 +69,12 @@ class TkinterGenerator(Generator):
         """
         Cals the generate method and the draw method of the floor.
         """
+        self._floor.stop_drawing()
         self.generate(self._floor_manager.next_seed.get())
         self._floor_manager.next_seed.set(self._floor_manager.next_seed.get())
         self._floor_manager.next_seed.set(secrets.token_hex(16))
         # self._floors[self._current_floor].draw(tk)
-        self._floor_manager.get_current_floor().draw_thread()
+        self._floor_manager.get_current_floor().draw_step_by_step()
         self._floor = self._floor_manager.get_current_floor()
 
     def open(self) -> None:
@@ -219,17 +220,18 @@ class TkinterGenerator(Generator):
         button_next = ttk.Button(button_frame, text="->", command=self._increase_floor)
         button_next.pack(side=tk.LEFT, padx=10)
         # Right arrow to increase
-        self._tk.bind("<Right>", lambda event: self._floor_manager.increase_floor())
+        self._tk.bind("<Right>", lambda event: self._increase_floor())
         # Next seed entry
         next_seed_label = ttk.Label(button_frame, text="Next seed: ")
         next_seed_label.pack(side=tk.LEFT, padx=10)
-        next_seed_entry = ttk.Entry(
+        self._next_seed_entry = ttk.Entry(
             button_frame, textvariable=self._floor_manager.next_seed
         )
-        next_seed_entry.bind(
-            "<Return>", lambda event: self._floor_manager.set_next_seed()
+        # Enter generates a floor with the entered seed
+        self._next_seed_entry.bind(
+            "<Return>", lambda event: self._generate_and_draw_floor()
         )
-        next_seed_entry.pack(side=tk.LEFT, padx=10)
+        self._next_seed_entry.pack(side=tk.LEFT, padx=10)
 
     def create_menu_bar(self) -> None:
         """
@@ -241,9 +243,7 @@ class TkinterGenerator(Generator):
         menu_bar.add_command(label="Open", command=self.open, accelerator="Ctrl+o")
         menu_bar.add_command(
             label="Save",
-            command=lambda: self.save(
-                os.path.join(self._output_file_path, self._output_file_name)
-            ),
+            command=self._save_current_floor,
             accelerator="Ctrl+s",
         )
         menu_bar.add_command(
@@ -258,3 +258,15 @@ class TkinterGenerator(Generator):
             label="Legend", command=legend_window.display_legend, accelerator="F1"
         )
         menu_bar.add_command(label="Exit", command=self.quit, accelerator="Ctrl+q")
+        self._tk.bind("<Control-o>", lambda event: self.open())
+        self._tk.bind("<Control-s>", lambda event: self._save_current_floor())
+        self._tk.bind("<Control-S>", lambda event: self.save())
+        self._tk.bind("<Control-t>", lambda event: self._theme_handler.switch_theme())
+        self._tk.bind("<F1>", lambda event: legend_window.display_legend())
+        self._tk.bind("<Control-q>", lambda event: self.quit())
+
+    def _save_current_floor(self) -> None:
+        """
+        Saves the current floor to the current output file.
+        """
+        self.save(os.path.join(self._output_file_path, self._output_file_name))
