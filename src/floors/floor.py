@@ -6,7 +6,7 @@ It also provides methods to save and load the floor as a json file
 and contains the seed it was created with.
 """
 import json
-from typing import List, Tuple, TypeVar, Optional
+from typing import List, Tuple, Optional
 
 import numpy as np
 
@@ -17,8 +17,6 @@ from utils.room_type import RoomType
 from utils.direction import Direction
 from rooms.room import Room
 from rooms.teleport_room import TeleportRoom
-
-T = TypeVar("T", bound=Room)
 
 
 class Floor:
@@ -33,7 +31,7 @@ class Floor:
         @param height: height for the floor
         @param width: width for the floor
         """
-        self._rooms: List[T] = []
+        self._rooms: List[Room] = []
         self._floor_grid = np.zeros((height, width))
         self._width: int = width
         self._height: int = height
@@ -271,7 +269,7 @@ class Floor:
                 new_coordinates
             ):
                 room = self._get_room(new_coordinates)
-                if room.get_type() == RoomType.BOSS_ROOM:
+                if room is not None and room.get_type() == RoomType.BOSS_ROOM:
                     return True
         return False
 
@@ -295,7 +293,7 @@ class Floor:
                 new_coordinates
             ):
                 room = self._get_room(new_coordinates)
-                if room.get_type().is_special():
+                if room is not None and room.get_type().is_special():
                     return True
         return False
 

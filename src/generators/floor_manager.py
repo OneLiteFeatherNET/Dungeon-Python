@@ -5,6 +5,8 @@ Module for managing the floors of the tkinter generator.
 import secrets
 import tkinter as tk
 from collections import deque
+from typing import Deque
+
 from utils import globals as my_globals
 
 from floors.tkinter_floor import TkinterFloor
@@ -20,7 +22,7 @@ class FloorManager:
         Creates a new floor manager.
         @param output_file_name: name of the output file
         """
-        self._floors = deque()
+        self._floors: Deque[TkinterFloor] = deque()
         self.current_floor_index = -1
         self.current_floor_name = tk.StringVar()
         self.current_floor_name.set(output_file_name)

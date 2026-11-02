@@ -9,15 +9,13 @@ import os
 import random
 from collections import deque
 from datetime import datetime
-from typing import List, Optional, TypeVar, Tuple
+from typing import List, Optional, Tuple
 
 from floors.floor import Floor
 from rooms.room import Room
 from utils import util_functions, globals as my_globals, room_type
 from utils.direction import Direction
 from utils.room_type import RoomType
-
-T = TypeVar("T", bound=Floor)
 
 
 class Generator:
@@ -45,7 +43,7 @@ class Generator:
         self._seed = seed
         self._output_file_name = output_file_name
         self._output_file_path = output_file_path
-        self._floor: T = Floor(my_globals.FLOOR_WIDTH, my_globals.FLOOR_HEIGHT, seed)
+        self._floor: Floor = Floor(my_globals.FLOOR_WIDTH, my_globals.FLOOR_HEIGHT, seed)
         self._random = random.Random(seed)
 
     def to_json(self, indent: int) -> str:
@@ -159,7 +157,7 @@ class Generator:
         Searches for dead ends in the floor and marks them ands returns their indices in a list.
         @return: indices of all dead ends
         """
-        dead_end_indices = []
+        dead_end_indices: List[int] = []
         floor = self._floor
         for i in range(len(floor.get_rooms())):
             room = floor.get_rooms()[i]

@@ -22,6 +22,8 @@ class TkinterGenerator(Generator):
     Tkinter version of the generator.
     """
 
+    _floor: TkinterFloor
+
     def __init__(
         self, seed: str, output_file_name: str, output_file_path: str, stage_id: int = 2
     ):

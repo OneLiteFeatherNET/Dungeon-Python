@@ -75,24 +75,8 @@ def add_direction_to_coordinates(
     @param coordinates: start point for the calculation
     @return: calculated point
     """
-    result = None
-    if direction is Direction.UP:
-        result = coordinates[0], coordinates[1] - 1
-    if direction is Direction.DOWN:
-        result = coordinates[0], coordinates[1] + 1
-    if direction is Direction.LEFT:
-        result = coordinates[0] - 1, coordinates[1]
-    if direction is Direction.RIGHT:
-        result = coordinates[0] + 1, coordinates[1]
-    if direction is Direction.UP_LEFT:
-        result = coordinates[0] - 1, coordinates[1] - 1
-    if direction is Direction.UP_RIGHT:
-        result = coordinates[0] + 1, coordinates[1] - 1
-    if direction is Direction.DOWN_LEFT:
-        result = coordinates[0] - 1, coordinates[1] + 1
-    if direction is Direction.DOWN_RIGHT:
-        result = coordinates[0] + 1, coordinates[1] + 1
-    return result
+    delta_x, delta_y = direction.value
+    return coordinates[0] + delta_x, coordinates[1] + delta_y
 
 
 json_file_options: dict = {
