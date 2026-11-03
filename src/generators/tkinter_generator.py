@@ -17,6 +17,18 @@ from generators.theme_handler import ThemeHandler
 from rooms.tkinter.legend_panel import LegendPanel
 from utils import util_functions, globals as my_globals
 
+# Highest floor id that can be entered in the floor field
+_MAX_FLOOR_ID = 99
+
+
+def _is_floor_id_input(value: str) -> bool:
+    """
+    Checks if the text of the floor field is allowed while typing.
+    @param value: new text of the floor field
+    @return: True for an empty text or a number up to the highest floor id
+    """
+    return value == "" or (value.isdigit() and int(value) <= _MAX_FLOOR_ID)
+
 
 class TkinterGenerator(Generator):
     """
@@ -53,6 +65,8 @@ class TkinterGenerator(Generator):
         self._legend = LegendPanel(self._content)
         self.show_legend = tk.BooleanVar(self._tk, value=True)
         self._floor_manager = FloorManager(output_file_name)
+        # Floor id for the next generated floor, edited in the floor field
+        self.next_floor_id = tk.StringVar(self._tk, value=str(stage_id))
         # The position changes whenever another floor is shown
         self._floor_manager.position.trace_add(
             "write", lambda *args: self._update_legend()
@@ -61,7 +75,9 @@ class TkinterGenerator(Generator):
 
     def _create_floor(self) -> None:
         """
-        Creates a new TkinterFloor and appends it to the floor queue.
+        Creates a new TkinterFloor.
+        The floor is added to the history once the generation has finished,
+        because a generation can create several floors until one fits.
         """
         self._floor = TkinterFloor(
             my_globals.FLOOR_HEIGHT,
@@ -70,17 +86,38 @@ class TkinterGenerator(Generator):
             my_globals.DEFAULT_FLOOR_NAME + my_globals.JSON_SUFFIX,
             self._seed,
         )
-        self._floor_manager.add_floor(self._floor)
+        self._floor.floor_id = self._stage_id
 
     def _generate_and_draw_floor(self) -> None:
         """
         Calls the generate method and the draw method of the floor.
         """
         self._floor.stop_drawing()
+        self.set_stage_id(self._read_next_floor_id())
         self.generate(self._floor_manager.next_seed.get())
         self._floor_manager.next_seed.set(secrets.token_hex(16))
         self._floor_manager.get_current_floor().draw_step_by_step()
         self._floor = self._floor_manager.get_current_floor()
+
+    def _read_next_floor_id(self) -> int:
+        """
+        Returns the floor id from the floor field.
+        An empty field is reset to the floor id of the last generation.
+        @return: floor id for the next floor
+        """
+        try:
+            return int(self.next_floor_id.get())
+        except ValueError:
+            self.next_floor_id.set(str(self._stage_id))
+            return self._stage_id
+
+    def change_floor_id(self, step: int) -> None:
+        """
+        Changes the floor id in the floor field.
+        @param step: amount to add to the floor id, negative to lower it
+        """
+        floor_id = min(max(self._read_next_floor_id() + step, 0), _MAX_FLOOR_ID)
+        self.next_floor_id.set(str(floor_id))
 
     def open(self) -> None:
         """
@@ -178,9 +215,10 @@ class TkinterGenerator(Generator):
 
     def generate(self, new_seed=None) -> None:
         """
-        Generates a new floor and updates the legend.
+        Generates a new floor, adds it to the history and updates the legend.
         """
         super().generate(new_seed)
+        self._floor_manager.add_floor(self._floor)
         self._update_legend()
 
     def _update_legend(self) -> None:
@@ -233,10 +271,20 @@ class TkinterGenerator(Generator):
             textvariable=self._floor_manager.current_floor_seed_var,
             style="Muted.TLabel",
         ).pack(side=tk.LEFT)
-        ttk.Label(status, text="  ·  ", style="Muted.TLabel").pack(side=tk.LEFT)
+        ttk.Label(status, text="  ·  Floor ", style="Muted.TLabel").pack(side=tk.LEFT)
         ttk.Label(
-            status, textvariable=self._floor_manager.position, style="Muted.TLabel"
+            status,
+            textvariable=self._floor_manager.current_floor_id_var,
+            style="Muted.TLabel",
         ).pack(side=tk.LEFT)
+        ttk.Label(status, text="  ·  ", style="Muted.TLabel").pack(side=tk.LEFT)
+        position_label = ttk.Label(
+            status, textvariable=self._floor_manager.position, style="Muted.TLabel"
+        )
+        position_label.pack(side=tk.LEFT)
+        _ToolTip(
+            position_label, tk.StringVar(self._tk, value="Position in the history")
+        )
 
     def _increase_floor(self) -> None:
         """
@@ -278,13 +326,31 @@ class TkinterGenerator(Generator):
         button_next.pack(side=tk.LEFT)
         # Right arrow to increase
         self._tk.bind("<Right>", self._shortcut(lambda: self._increase_floor()))
+        # Floor id for the next floor
+        ttk.Label(button_frame, text="Floor", style="Muted.TLabel").pack(
+            side=tk.LEFT, padx=(20, 6)
+        )
+        self._floor_id_entry = ttk.Spinbox(
+            button_frame,
+            textvariable=self.next_floor_id,
+            from_=0,
+            to=_MAX_FLOOR_ID,
+            width=4,
+            validate="key",
+            validatecommand=(self._tk.register(_is_floor_id_input), "%P"),
+        )
+        self._floor_id_entry.bind("<Return>", lambda event: self._submit_seed())
+        self._floor_id_entry.bind("<Escape>", lambda event: self._tk.focus_set())
+        self._floor_id_entry.pack(side=tk.LEFT)
+        self._tk.bind("<Prior>", self._shortcut(lambda: self.change_floor_id(1)))
+        self._tk.bind("<Next>", self._shortcut(lambda: self.change_floor_id(-1)))
         # Next seed entry
         next_seed_label = ttk.Label(
             button_frame, text="Next seed", style="Muted.TLabel"
         )
-        next_seed_label.pack(side=tk.LEFT, padx=(20, 6))
+        next_seed_label.pack(side=tk.LEFT, padx=(16, 6))
         self._next_seed_entry = ttk.Entry(
-            button_frame, textvariable=self._floor_manager.next_seed, width=34
+            button_frame, textvariable=self._floor_manager.next_seed, width=30
         )
         # Enter generates a floor with the entered seed, Escape leaves the field.
         # Both give the focus back so that the shortcuts work again.
@@ -358,11 +424,23 @@ class TkinterGenerator(Generator):
         floor_menu.add_command(
             label="Generate", command=self._generate_and_draw_floor, accelerator="Space"
         )
+        floor_menu.add_separator()
         floor_menu.add_command(
-            label="Previous Floor", command=self._decrease_floor, accelerator="←"
+            label="Higher Floor ID",
+            command=lambda: self.change_floor_id(1),
+            accelerator="Page Up",
         )
         floor_menu.add_command(
-            label="Next Floor", command=self._increase_floor, accelerator="→"
+            label="Lower Floor ID",
+            command=lambda: self.change_floor_id(-1),
+            accelerator="Page Down",
+        )
+        floor_menu.add_separator()
+        floor_menu.add_command(
+            label="Back", command=self._decrease_floor, accelerator="←"
+        )
+        floor_menu.add_command(
+            label="Forward", command=self._increase_floor, accelerator="→"
         )
         menu_bar.add_cascade(label="Floor", menu=floor_menu)
 

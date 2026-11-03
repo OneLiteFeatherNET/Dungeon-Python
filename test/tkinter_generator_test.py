@@ -263,6 +263,71 @@ class TkinterGeneratorTest(unittest.TestCase):
                     self._press("<space>")
                 generate.assert_called_once()
 
+    def test_each_generation_adds_one_floor_to_the_history(self):
+        # Some seeds need several attempts until a floor fits
+        for seed in ("a", "b", "c", "d", "e"):
+            self._generator.generate(seed)
+
+        self.assertEqual(6, len(self._generator._floor_manager._floors))
+        self.assertEqual("6 / 6", self._generator._floor_manager.position.get())
+
+    def test_generate_uses_the_floor_id_from_the_floor_field(self):
+        generator = self._generator
+        generator.add_buttons()
+        generator.next_floor_id.set("5")
+
+        with mock.patch("floors.tkinter_floor.TkinterFloor.draw_step_by_step"):
+            generator._generate_and_draw_floor()
+
+        self.assertEqual(5, generator._floor.floor_id)
+        self.assertEqual("5", generator._floor_manager.current_floor_id_var.get())
+        self.assertEqual(5, generator.to_dict()["_floor_id"])
+
+    def test_page_keys_change_the_floor_id(self):
+        generator = self._generator
+        generator.add_buttons()
+
+        self._press("<Prior>")
+        self._press("<Prior>")
+        self.assertEqual("4", generator.next_floor_id.get())
+
+        for _ in range(10):
+            self._press("<Next>")
+        self.assertEqual("0", generator.next_floor_id.get())
+
+    def test_floor_field_only_accepts_floor_ids(self):
+        # pylint: disable=import-outside-toplevel
+        from generators.tkinter_generator import _is_floor_id_input
+
+        self.assertTrue(_is_floor_id_input(""))
+        self.assertTrue(_is_floor_id_input("12"))
+        self.assertFalse(_is_floor_id_input("-1"))
+        self.assertFalse(_is_floor_id_input("x"))
+        self.assertFalse(_is_floor_id_input("100"))
+
+    def test_empty_floor_field_keeps_the_last_floor_id(self):
+        generator = self._generator
+        generator.add_buttons()
+        generator.next_floor_id.set("")
+
+        with mock.patch("floors.tkinter_floor.TkinterFloor.draw_step_by_step"):
+            generator._generate_and_draw_floor()
+
+        self.assertEqual(2, generator._floor.floor_id)
+        self.assertEqual("2", generator.next_floor_id.get())
+
+    def test_going_back_shows_the_floor_id_of_the_previous_floor(self):
+        generator = self._generator
+        generator.add_buttons()
+        generator.next_floor_id.set("7")
+        with mock.patch("floors.tkinter_floor.TkinterFloor.draw_step_by_step"):
+            generator._generate_and_draw_floor()
+
+        self._press("<Left>")
+
+        self.assertEqual("2", generator._floor_manager.current_floor_id_var.get())
+        self.assertEqual("1 / 2", generator._floor_manager.position.get())
+
 
 if __name__ == "__main__":
     unittest.main()

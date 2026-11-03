@@ -63,6 +63,7 @@ class TkinterFloor(Floor):
             name,
             floor.seed,
         )
+        tkinter_floor.floor_id = floor.floor_id
         for room in floor.get_rooms():
             tkinter_room: TkinterRoom
             if isinstance(room, TeleportRoom):

@@ -25,20 +25,21 @@ class FloorManager:
         self.current_floor_name = tk.StringVar()
         self.current_floor_name.set(output_file_name)
         self.current_floor_seed_var = tk.StringVar()
+        # Floor id of the shown floor, "?" for files without a floor id
+        self.current_floor_id_var = tk.StringVar()
+        # Position of the shown floor in the history, e.g. "2 / 3"
         self.position = tk.StringVar()
         self.next_seed = tk.StringVar()
         self.next_seed.set(secrets.token_hex(16))
 
     def add_floor(self, floor: TkinterFloor) -> None:
         """
-        Adds a floor to the floor manager.
+        Adds a floor to the floor manager and shows it.
         @param floor: floor to add
         """
         self._floors.append(floor)
         self.current_floor_index = len(self._floors) - 1
-        self.current_floor_name.set(floor.name)
-        self.current_floor_seed_var.set(floor.seed)
-        self._update_position()
+        self._show_current_floor_info()
 
     def get_current_floor(self) -> TkinterFloor:
         """
@@ -57,32 +58,36 @@ class FloorManager:
 
     def decrease_floor(self) -> None:
         """
-        Lowers the index of the current floor.
+        Shows the previous floor of the history.
         """
         if self.current_floor_index > 0:
-            self.get_current_floor().stop_drawing()
-            self.current_floor_index -= 1
-            self._floors[self.current_floor_index].draw()
-            self.current_floor_name.set(self._floors[self.current_floor_index].name)
-            self.current_floor_seed_var.set(self.get_current_floor().seed)
-            self._update_position()
+            self._show_floor_at(self.current_floor_index - 1)
 
     def increase_floor(self) -> None:
         """
-        Increases the index of the current floor.
+        Shows the next floor of the history.
         """
-        last_floor = len(self._floors) - 1
-        if self.current_floor_index < last_floor:
-            self.get_current_floor().stop_drawing()
-            self.current_floor_index += 1
-            current_floor = self._floors[self.current_floor_index]
-            current_floor.draw()
-            self.current_floor_name.set(current_floor.name)
-            self.current_floor_seed_var.set(self.get_current_floor().seed)
-            self._update_position()
+        if self.current_floor_index < len(self._floors) - 1:
+            self._show_floor_at(self.current_floor_index + 1)
 
-    def _update_position(self) -> None:
+    def _show_floor_at(self, index: int) -> None:
         """
-        Updates the text that shows which floor is displayed.
+        Stops drawing the current floor and draws the floor at the given index.
+        @param index: index of the floor in the history
         """
-        self.position.set(f"Floor {self.current_floor_index + 1} / {len(self._floors)}")
+        self.get_current_floor().stop_drawing()
+        self.current_floor_index = index
+        self.get_current_floor().draw()
+        self._show_current_floor_info()
+
+    def _show_current_floor_info(self) -> None:
+        """
+        Updates the texts that describe the current floor.
+        """
+        floor = self.get_current_floor()
+        self.current_floor_name.set(floor.name)
+        self.current_floor_seed_var.set(floor.seed)
+        self.current_floor_id_var.set(
+            "?" if floor.floor_id is None else str(floor.floor_id)
+        )
+        self.position.set(f"{self.current_floor_index + 1} / {len(self._floors)}")

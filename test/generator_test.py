@@ -320,6 +320,38 @@ class GeneratorTest(unittest.TestCase):
                     self.assertEqual(1, floor.count_neighbours(*position))
                     self.assertFalse(floor.has_boss_room_as_neighbour(position))
 
+    def test_to_json_contains_the_floor_id(self):
+        generator = Generator("abc", "test", "", 3)
+        generator.generate()
+
+        result = json.loads(generator.to_json())
+
+        self.assertEqual(3, result["_floor_id"])
+        self.assertEqual(3, Floor.from_json(generator.to_json()).floor_id)
+
+    def test_from_json_loads_files_without_a_floor_id(self):
+        self._generator.generate()
+        old_file = self._generator.to_dict()
+        del old_file["_floor_id"]
+
+        restored = Floor.from_json(json.dumps(old_file))
+
+        self.assertIsNone(restored.floor_id)
+        self.assertEqual(self._generator._floor.get_rooms(), restored.get_rooms())
+
+    def test_set_stage_id_changes_the_generated_floor(self):
+        self._generator.set_stage_id(4)
+        self._generator.generate("abc")
+
+        self.assertEqual(4, self._generator._floor.floor_id)
+        expected = Generator("abc", "test", "", 4)
+        expected.generate()
+        self.assertEqual(expected.to_dict(), self._generator.to_dict())
+
+    def test_set_stage_id_rejects_negative_ids(self):
+        with self.assertRaises(ValueError):
+            self._generator.set_stage_id(-1)
+
     def test_save_writes_the_generated_floor_to_the_given_path(self):
         self._generator.generate()
         with tempfile.TemporaryDirectory() as tmp_dir:

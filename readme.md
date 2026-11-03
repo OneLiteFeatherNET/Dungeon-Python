@@ -53,13 +53,16 @@ The UI draws a generated floor room by room, including the doors between the roo
 and an arrow from a teleport room to its target. Every generated floor is kept,
 so you can switch between them. A legend next to the floor shows the room types
 and how often they appear on the current floor.
+The status bar shows the seed and floor id of the shown floor
+and its position in the history.
 All actions are also available in the File, View and Floor menus.
 
 | Key | Action |
 |---|---|
-| `Space` | Generate a new floor with the seed from the "Next seed" field |
-| `Enter` in "Next seed" | Generate a new floor with the entered seed |
-| `←` / `→` | Switch to the previous / next floor |
+| `Space` | Generate a new floor with the seed from the "Next seed" field and the floor id from the "Floor" field |
+| `Enter` in "Next seed" or "Floor" | Generate a new floor with the entered values |
+| `Page Up` / `Page Down` | Increase / decrease the floor id in the "Floor" field |
+| `←` / `→` | Go back / forward in the history of generated floors |
 | `Ctrl+O` | Open a floor from a JSON file |
 | `Ctrl+S` | Save the current floor |
 | `Ctrl+Shift+S` | Save the current floor as a new file |
@@ -96,6 +99,7 @@ A negative floor id returns `422`.
 {
   "_width": 9,
   "_height": 8,
+  "_floor_id": 2,
   "_floor": {
     "_seed": "2",
     "_rooms": [
@@ -123,6 +127,7 @@ A negative floor id returns `422`.
 | Field | Description |
 |---|---|
 | `_width`, `_height` | Size of the floor in rooms |
+| `_floor_id` | Floor id the floor was generated for. Together with the seed it reproduces the floor |
 | `_floor._seed` | Seed the floor was generated with |
 | `_floor._rooms` | List of all rooms |
 | `_id` | Id of the room, unique within the floor |
