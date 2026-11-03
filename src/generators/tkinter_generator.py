@@ -292,29 +292,56 @@ class TkinterGenerator(Generator):
 
     def create_menu_bar(self) -> None:
         """
-        Creates a menu bar for the application.
+        Creates the menu bar with the file, view and floor menus.
         """
-        # Create a menu bar
-        menu_bar = tk.Menu(self._tk)
+        menu_bar = tk.Menu(self._tk, tearoff=False)
         self._tk.config(menu=menu_bar)
-        menu_bar.add_command(label="Open", command=self.open, accelerator="Ctrl+o")
-        menu_bar.add_command(
-            label="Save",
-            command=self._save_current_floor,
-            accelerator="Ctrl+s",
+        self._theme_handler.register_menu(menu_bar)
+
+        file_menu = tk.Menu(menu_bar, tearoff=False)
+        file_menu.add_command(label="Open…", command=self.open, accelerator="Ctrl+O")
+        file_menu.add_command(
+            label="Save", command=self._save_current_floor, accelerator="Ctrl+S"
         )
-        menu_bar.add_command(
-            label="Save As", command=self.save, accelerator="Ctrl+Shift+s"
+        file_menu.add_command(
+            label="Save As…", command=self.save, accelerator="Ctrl+Shift+S"
         )
-        menu_bar.add_command(
-            label="Switch Theme",
-            command=self._theme_handler.switch_theme,
-            accelerator="Ctrl+t",
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.quit, accelerator="Ctrl+Q")
+        menu_bar.add_cascade(label="File", menu=file_menu)
+
+        view_menu = tk.Menu(menu_bar, tearoff=False)
+        view_menu.add_checkbutton(
+            label="Dark Theme",
+            variable=self._theme_handler.dark,
+            command=lambda: self._theme_handler.set_dark(
+                self._theme_handler.dark.get()
+            ),
+            accelerator="Ctrl+T",
         )
-        menu_bar.add_command(
-            label="Legend", command=self.toggle_legend, accelerator="F1"
+        view_menu.add_checkbutton(
+            label="Legend",
+            variable=self.show_legend,
+            command=self._apply_legend_visibility,
+            accelerator="F1",
         )
-        menu_bar.add_command(label="Exit", command=self.quit, accelerator="Ctrl+q")
+        menu_bar.add_cascade(label="View", menu=view_menu)
+
+        floor_menu = tk.Menu(menu_bar, tearoff=False)
+        floor_menu.add_command(
+            label="Generate", command=self._generate_and_draw_floor, accelerator="Space"
+        )
+        floor_menu.add_command(
+            label="Previous Floor", command=self._decrease_floor, accelerator="←"
+        )
+        floor_menu.add_command(
+            label="Next Floor", command=self._increase_floor, accelerator="→"
+        )
+        menu_bar.add_cascade(label="Floor", menu=floor_menu)
+
+        for menu in (file_menu, view_menu, floor_menu):
+            self._theme_handler.register_menu(menu)
+
         self._tk.bind("<Control-o>", lambda event: self.open())
         self._tk.bind("<Control-s>", lambda event: self._save_current_floor())
         self._tk.bind("<Control-S>", lambda event: self.save())

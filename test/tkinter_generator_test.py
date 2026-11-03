@@ -209,6 +209,28 @@ class TkinterGeneratorTest(unittest.TestCase):
         for room_type, count in expected(first).items():
             self.assertEqual(count, generator._legend.get_count(room_type))
 
+    def test_menu_bar_has_file_view_and_floor_menus(self):
+        generator = self._generator
+        generator.create_menu_bar()
+        menu_bar = generator._tk.nametowidget(generator._tk["menu"])
+
+        labels = [
+            menu_bar.entrycget(index, "label")
+            for index in range(menu_bar.index("end") + 1)
+        ]
+
+        self.assertEqual(["File", "View", "Floor"], labels)
+
+    def test_dark_theme_check_mark_follows_the_shortcut(self):
+        generator = self._generator
+        generator.create_menu_bar()
+
+        self._press("<Control-t>")
+        self.assertTrue(generator._theme_handler.dark.get())
+
+        self._press("<Control-t>")
+        self.assertFalse(generator._theme_handler.dark.get())
+
 
 if __name__ == "__main__":
     unittest.main()
