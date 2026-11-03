@@ -369,8 +369,8 @@ class GeneratorTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self._generator.set_stage_id(-1)
 
-    def test_special_rooms_are_not_next_to_the_start_when_avoidable(self):
-        for stage_id in (1, 2, 5):
+    def test_special_rooms_are_never_next_to_the_start(self):
+        for stage_id in (0, 1, 2, 5):
             for seed in range(100):
                 with self.subTest(stage_id=stage_id, seed=seed):
                     generator = Generator(str(seed), "test", "", stage_id)
@@ -379,20 +379,10 @@ class GeneratorTest(unittest.TestCase):
                     start = next(
                         r for r in rooms if r.get_type() == RoomType.START_ROOM
                     )
-
-                    def next_to_start(room, start=start):
-                        return abs(room[0] - start[0]) + abs(room[1] - start[1]) == 1
-
-                    special = [
-                        r
-                        for r in rooms
-                        if r.get_type() in (RoomType.ITEM_ROOM, RoomType.SHOP_ROOM)
-                    ]
-                    unused = [r for r in rooms if r.get_type() == RoomType.DEAD_END]
-                    for room in special:
-                        if next_to_start(room):
-                            # Only allowed if no other dead end was left
-                            self.assertTrue(all(next_to_start(r) for r in unused))
+                    for room in rooms:
+                        if room.get_type() in (RoomType.ITEM_ROOM, RoomType.SHOP_ROOM):
+                            distance = abs(room[0] - start[0]) + abs(room[1] - start[1])
+                            self.assertGreater(distance, 1)
 
     def test_save_writes_the_generated_floor_to_the_given_path(self):
         self._generator.generate()

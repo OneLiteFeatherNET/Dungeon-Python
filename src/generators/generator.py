@@ -125,6 +125,8 @@ class Generator:
         Generates the rooms for the floor.
         Like in "The Binding of Isaac", a floor is generated again if it does not
         reach the room amount or has not enough dead ends for the special rooms.
+        Dead ends directly next to the start room do not count,
+        so the item and shop room are not placed right next to the start.
         """
         if new_seed is not None:
             self._seed_random(new_seed)
@@ -133,8 +135,13 @@ class Generator:
             last_attempt = attempt == my_globals.MAX_GENERATION_ATTEMPTS - 1
             start_room, complete = self._place_rooms()
             dead_ends = self.mark_dead_ends()
+            usable = [
+                index
+                for index in dead_ends
+                if not self._is_next_to(self._floor.get_rooms()[index], start_room)
+            ]
             if last_attempt or (
-                complete and len(dead_ends) >= my_globals.REQUIRED_DEAD_ENDS
+                complete and len(usable) >= my_globals.REQUIRED_DEAD_ENDS
             ):
                 break
         self.add_boss_room(dead_ends, start_room)
@@ -183,6 +190,13 @@ class Generator:
             room_tuple = room_tuple_list.pop()
             floor.add_room(room_tuple[0], room_tuple[1])
         return start_room, number_of_current_rooms >= number_of_rooms
+
+    @staticmethod
+    def _is_next_to(room: Room, position: Tuple[int, int]) -> bool:
+        """
+        Returns if the room is directly next to the given position.
+        """
+        return abs(room[0] - position[0]) + abs(room[1] - position[1]) == 1
 
     def mark_dead_ends(self) -> list:
         """
@@ -364,10 +378,9 @@ class Generator:
         )
 
         def next_to_start(index: int) -> bool:
-            if start is None:
-                return False
-            room = rooms[index]
-            return abs(room[0] - start[0]) + abs(room[1] - start[1]) == 1
+            return start is not None and self._is_next_to(
+                rooms[index], (start[0], start[1])
+            )
 
         preferred = [index for index in dead_ends if not next_to_start(index)]
         fallback = [index for index in dead_ends if next_to_start(index)]
