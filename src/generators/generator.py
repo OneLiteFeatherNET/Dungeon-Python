@@ -352,14 +352,29 @@ class Generator:
 
     def add_special_rooms(self, dead_ends: list) -> None:
         """
-        Places the special rooms on the dead ends of the floor.
+        Places the special rooms on randomly chosen dead ends of the floor.
+        Dead ends directly next to the start room are only used
+        if there are not enough other dead ends.
         @param dead_ends: indices of all dead ends
         """
         floor = self._floor
-        i = 0
-        while i < len(room_type.SPECIAL_ROOMS) and i < len(dead_ends):
-            floor.get_rooms()[dead_ends[i]].set_type(room_type.SPECIAL_ROOMS[i])
-            i += 1
+        rooms = floor.get_rooms()
+        start = next(
+            (room for room in rooms if room.get_type() == RoomType.START_ROOM), None
+        )
+
+        def next_to_start(index: int) -> bool:
+            if start is None:
+                return False
+            room = rooms[index]
+            return abs(room[0] - start[0]) + abs(room[1] - start[1]) == 1
+
+        preferred = [index for index in dead_ends if not next_to_start(index)]
+        fallback = [index for index in dead_ends if next_to_start(index)]
+        self._random.shuffle(preferred)
+        self._random.shuffle(fallback)
+        for special_room, index in zip(room_type.SPECIAL_ROOMS, preferred + fallback):
+            rooms[index].set_type(special_room)
 
     def place_super_secret_room(self) -> None:
         """
