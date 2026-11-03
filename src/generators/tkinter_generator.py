@@ -6,7 +6,7 @@ import os
 import secrets
 import tkinter as tk
 from typing import Callable, List, Optional, Union
-from tkinter import filedialog, messagebox
+from tkinter import filedialog
 from tkinter import ttk
 
 from floors.floor import Floor
@@ -14,6 +14,7 @@ from floors.tkinter_floor import TkinterFloor
 from generators.floor_manager import FloorManager
 from generators.generator import Generator
 from generators.theme_handler import ThemeHandler
+from rooms.tkinter import dialog
 from rooms.tkinter.legend_panel import LegendPanel
 from rooms.tkinter.tooltip import RoomToolTip, ToolTip
 from utils import util_functions, globals as my_globals
@@ -159,8 +160,13 @@ class TkinterGenerator(Generator):
             # Check if the file already exists
             if os.path.exists(path):
                 # Show dialog for overwriting the file
-                if messagebox.askyesno(
-                    "File already exists", "Do you want to overwrite the file?"
+                if dialog.ask(
+                    self._tk,
+                    "File already exists",
+                    f"{os.path.basename(path)} already exists. "
+                    "Do you want to overwrite it?",
+                    "Overwrite",
+                    "Cancel",
                 ):
                     save_file = True
             else:
@@ -169,7 +175,7 @@ class TkinterGenerator(Generator):
                 # Save the file to the given path
                 path = super().save(path)
                 # Show dialog for saving the file
-                messagebox.showinfo("Save", "File saved successfully!")
+                dialog.inform(self._tk, "Save", "File saved successfully!")
 
             return path
         options = util_functions.json_file_options.copy()
@@ -205,7 +211,9 @@ class TkinterGenerator(Generator):
         """
         Shows a dialog for quitting the application.
         """
-        if messagebox.askyesno("Quit", "Do you really want to quit?"):
+        if dialog.ask(
+            self._tk, "Quit", "Do you really want to quit?", "Quit", "Cancel"
+        ):
             self._tk.quit()
 
     def _redraw_floor(self) -> None:

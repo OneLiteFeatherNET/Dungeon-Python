@@ -87,6 +87,51 @@ class FloorTest(unittest.TestCase):
     def test_is_dead_end_false(self):
         self.assertFalse(self._floor_with_rooms.is_dead_end(2, 2))
 
+    def test_rooms_by_distance_spreads_from_the_start_room(self):
+        # pylint: disable=import-outside-toplevel
+        from generators.generator import Generator
+        from rooms.teleport_room import TeleportRoom
+
+        hidden = (RoomType.SECRET_ROOM, RoomType.SUPER_SECRET_ROOM)
+        for stage_id in (0, 2, 5):
+            for seed in range(60):
+                with self.subTest(stage_id=stage_id, seed=seed):
+                    generator = Generator(str(seed), "test", "", stage_id)
+                    generator.generate()
+                    floor = generator._floor
+                    rings = floor.rooms_by_distance()
+
+                    ids = [room.get_id() for ring in rings for room in ring]
+                    self.assertEqual(
+                        sorted(r.get_id() for r in floor.get_rooms()), sorted(ids)
+                    )
+                    self.assertEqual(
+                        [RoomType.START_ROOM], [r.get_type() for r in rings[0]]
+                    )
+                    self.assertTrue(all(r.get_type() in hidden for r in rings[-1]))
+                    boss_rings = {
+                        index
+                        for index, ring in enumerate(rings)
+                        for room in ring
+                        if room.get_type() == RoomType.BOSS_ROOM
+                    }
+                    self.assertEqual(1, len(boss_rings))
+                    # Every visible room is reached from the ring before it
+                    for index in range(1, len(rings) - 1):
+                        previous = rings[index - 1]
+                        for room in rings[index]:
+                            if room.get_type() == RoomType.BOSS_ROOM:
+                                continue
+                            reached = any(
+                                abs(room[0] - other[0]) + abs(room[1] - other[1]) == 1
+                                or (
+                                    isinstance(other, TeleportRoom)
+                                    and other.get_connected_room_id() == room.get_id()
+                                )
+                                for other in previous
+                            )
+                            self.assertTrue(reached)
+
 
 if __name__ == "__main__":
     unittest.main()

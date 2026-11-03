@@ -49,7 +49,8 @@ A number based on the current time is appended to the file name, e.g. `generatio
 python src/main.py --ui
 ```
 
-The UI draws a generated floor room by room, including the doors between the rooms
+The UI draws a generated floor step by step, spreading from the start room through the doors
+and revealing the secret rooms last. It shows the doors between the rooms
 and an arrow from a teleport room to its target. Every generated floor is kept,
 so you can switch between them. A legend next to the floor shows the room types
 and how often they appear on the current floor.

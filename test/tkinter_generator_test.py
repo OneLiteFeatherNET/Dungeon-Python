@@ -101,12 +101,21 @@ class TkinterGeneratorTest(unittest.TestCase):
     def _drawn_rooms(self) -> int:
         return len(self._generator._canvas.find_withtag("room"))
 
-    def test_draw_step_by_step_draws_one_room_after_another(self):
+    def test_draw_step_by_step_starts_with_the_start_room(self):
         floor = self._generator._floor
 
         floor.draw_step_by_step(delay_ms=10)
 
         self.assertEqual(1, self._drawn_rooms())
+        start = next(
+            r for r in floor.get_rooms() if r.get_type() == RoomType.START_ROOM
+        )
+        start_x = start[0] * my_globals.ROOM_WIDTH + my_globals.ROOM_WIDTH / 2
+        start_y = start[1] * my_globals.ROOM_HEIGHT + my_globals.ROOM_HEIGHT / 2
+        canvas = self._generator._canvas
+        drawn = canvas.find_withtag("room")[0]
+        x0, y0, x1, y1 = canvas.bbox(drawn)
+        self.assertTrue(x0 < start_x < x1 and y0 < start_y < y1)
         self._pump(10 * len(floor.get_rooms()) + 300)
         self.assertEqual(len(floor.get_rooms()), self._drawn_rooms())
 
@@ -394,6 +403,51 @@ class TkinterGeneratorTest(unittest.TestCase):
         self._hover(button, 10, 10)
 
         self.assertEqual("Generate a new floor (Space)", tooltip.get_shown_text())
+
+    def _answer_dialog(self, key: str) -> None:
+        """
+        Presses the key in the next dialog that opens.
+        Closes the dialog after a few seconds, so a broken dialog fails the test
+        instead of blocking it.
+        """
+        tk = self._generator._tk
+
+        def dialogs():
+            return [w for w in tk.winfo_children() if w.winfo_class() == "Toplevel"]
+
+        def press():
+            if not dialogs():
+                tk.after(20, press)
+                return
+            (tk.focus_get() or dialogs()[-1]).event_generate(key, when="tail")
+
+        def close_stuck_dialogs():
+            for window in dialogs():
+                window.destroy()
+
+        tk.after(20, press)
+        tk.after(3000, close_stuck_dialogs)
+
+    def test_dialog_uses_its_own_button_texts(self):
+        # pylint: disable=import-outside-toplevel
+        from rooms.tkinter.dialog import Dialog
+
+        dialog = Dialog(self._generator._tk, "Quit", "Quit?", "Quit", "Cancel")
+
+        self.assertEqual("Quit", dialog.confirm_button.cget("text"))
+        self.assertEqual("Cancel", dialog.cancel_button.cget("text"))
+        dialog.cancel()
+
+    def test_quit_asks_and_quits_on_confirm(self):
+        generator = self._generator
+        with mock.patch.object(generator._tk, "quit") as quit_app:
+            self._answer_dialog("<Escape>")
+            generator.quit()
+            quit_app.assert_not_called()
+
+            self._answer_dialog("<Return>")
+            generator.quit()
+            quit_app.assert_called_once()
 
 
 if __name__ == "__main__":
