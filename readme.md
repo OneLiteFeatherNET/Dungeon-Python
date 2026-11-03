@@ -4,9 +4,12 @@ A small generator for 2D dungeon floors.
 The algorithm is based on the floor generation of the game "The Binding of Isaac",
 which is described in this [article](https://www.boristhebrave.com/2020/09/12/dungeon-generation-in-binding-of-isaac/).
 
-A floor is a grid of 9 × 8 cells with a start room, normal rooms, dead ends and a boss room.
-Depending on the layout it also contains an item room, a shop and secret rooms.
-The same seed and floor id always produce the same floor.
+A floor is a grid of 9 × 8 cells with a start room, normal rooms, dead ends, a boss room,
+an item room, a shop, a secret room and a super secret room.
+Like in the game, a floor is generated again until it has enough rooms
+and dead ends for the special rooms.
+The same seed and floor id always produce the same floor,
+and every floor id produces a different floor for the same seed.
 
 The generator can be used in three ways:
 
@@ -32,7 +35,7 @@ python src/main.py -s my-seed -f 3 -o my-floor
 | Option | Description | Default |
 |---|---|---|
 | `-s`, `--seed` | Seed for the random number generator | random seed |
-| `-f`, `--floor` | Floor id, must be 0 or greater. Higher floor ids get more rooms (at most 15) | `2` |
+| `-f`, `--floor` | Floor id, must be 0 or greater. Higher floor ids get more rooms (8 to 9 on floor 0, up to 20) | `2` |
 | `-o`, `--output` | Name of the output file | `floor` |
 | `-u`, `--ui` | Opens the UI instead of writing a file | disabled |
 | `-h`, `--help` | Shows the help | |
@@ -142,7 +145,8 @@ A negative floor id returns `422`.
 | 7 | Secret room |
 | 8 | Super secret room, connected to only one room and placed close to the boss room |
 
-A boss room can span up to 2 × 2 cells, every cell is stored as its own room.
+Most boss rooms are a single cell, some span 1 × 2 or 2 × 2 cells
+and every cell is stored as its own room.
 On some floors the boss room is moved to a free cell away from the other rooms
 and can only be reached through a teleport room.
 
