@@ -56,13 +56,6 @@ def place_room(rng: random.Random) -> bool:
     return rng.randint(1, 50) >= 25
 
 
-def rgb2hex(r, g, b):
-    """
-    Converts rgb to hex.
-    """
-    return f"#{r:02x}{g:02x}{b:02x}"
-
-
 def add_direction_to_coordinates(
     direction: Direction, coordinates: Tuple[int, int]
 ) -> Tuple[int, int]:
@@ -85,7 +78,6 @@ open_file_text: str = "Open File"
 save_file_text: str = "Save File"
 
 window_title: str = "Floor Generator"
-window_size: str = "1200x550"
 
 
 def calculate_distance(cord1, cord2) -> int:
