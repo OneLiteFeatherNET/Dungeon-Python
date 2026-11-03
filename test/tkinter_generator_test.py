@@ -8,6 +8,7 @@ from unittest import mock
 from floor_test_support import teleport_seed
 from ui_test_support import requires_display
 from utils import globals as my_globals
+from utils.room_type import RoomType
 
 
 @requires_display()
@@ -327,6 +328,72 @@ class TkinterGeneratorTest(unittest.TestCase):
 
         self.assertEqual("2", generator._floor_manager.current_floor_id_var.get())
         self.assertEqual("1 / 2", generator._floor_manager.position.get())
+
+    def _hover(self, widget, x: int, y: int) -> None:
+        # pylint: disable=import-outside-toplevel
+        from rooms.tkinter.tooltip import TOOLTIP_DELAY_MS
+
+        self._generator._content.pack()
+        self._generator._canvas.pack()
+        self._generator._tk.update()
+        widget.event_generate("<Enter>", x=x, y=y)
+        widget.event_generate("<Motion>", x=x, y=y)
+        self._pump(TOOLTIP_DELAY_MS + 200)
+
+    def test_room_tooltip_shows_the_room_below_the_pointer(self):
+        generator = self._generator
+        generator._floor.draw()
+        start = next(
+            room
+            for room in generator._floor.get_rooms()
+            if room.get_type() == RoomType.START_ROOM
+        )
+
+        self._hover(
+            generator._canvas,
+            start[0] * my_globals.ROOM_WIDTH + 40,
+            start[1] * my_globals.ROOM_HEIGHT + 30,
+        )
+
+        self.assertTrue(
+            generator._room_tooltip.get_shown_text().startswith("Start Room · #0")
+        )
+        generator._canvas.event_generate("<Leave>")
+        self.assertEqual("", generator._room_tooltip.get_shown_text())
+
+    def test_room_tooltip_is_not_shown_for_empty_cells(self):
+        generator = self._generator
+        floor = generator._floor
+        empty = next(
+            (x, y)
+            for x in range(my_globals.FLOOR_WIDTH)
+            for y in range(my_globals.FLOOR_HEIGHT)
+            if not floor.contains_room((x, y))
+        )
+
+        self._hover(
+            generator._canvas,
+            empty[0] * my_globals.ROOM_WIDTH + 40,
+            empty[1] * my_globals.ROOM_HEIGHT + 30,
+        )
+
+        self.assertEqual("", generator._room_tooltip.get_shown_text())
+
+    def test_buttons_have_tooltips_with_their_shortcuts(self):
+        generator = self._generator
+        generator.add_buttons()
+        button = next(
+            widget
+            for widget in generator._get_bottom_bar()
+            .winfo_children()[0]
+            .winfo_children()
+            if widget.winfo_class() == "TButton" and widget.cget("text") == "Generate"
+        )
+        tooltip = next(t for t in generator._tooltips if t.widget is button)
+
+        self._hover(button, 10, 10)
+
+        self.assertEqual("Generate a new floor (Space)", tooltip.get_shown_text())
 
 
 if __name__ == "__main__":

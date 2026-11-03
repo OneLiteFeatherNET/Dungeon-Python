@@ -55,6 +55,8 @@ so you can switch between them. A legend next to the floor shows the room types
 and how often they appear on the current floor.
 The status bar shows the seed and floor id of the shown floor
 and its position in the history.
+Resting the mouse on a room shows its type, id, position, doors and teleport connection,
+and the controls show what they do and their keyboard shortcut.
 All actions are also available in the File, View and Floor menus.
 
 | Key | Action |
