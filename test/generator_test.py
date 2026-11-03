@@ -11,6 +11,7 @@ from collections import deque
 
 import numpy
 
+from floor_test_support import teleport_seed
 from floors.floor import Floor
 from generators.generator import Generator
 from rooms.teleport_room import TeleportRoom
@@ -271,7 +272,7 @@ class GeneratorTest(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
 
     def test_from_json_restores_teleport_rooms(self):
-        generator = Generator("2", "test", "", 2)
+        generator = Generator(teleport_seed(), "test", "", 2)
         generator.generate()
         original = [
             room
@@ -301,6 +302,23 @@ class GeneratorTest(unittest.TestCase):
 
                 self.assertEqual(seed, result["_floor"]["_seed"])
                 self.assertEqual(seed, Floor.from_json(generator.to_json(1)).seed)
+
+    def test_every_floor_has_one_super_secret_room_next_to_a_single_room(self):
+        for stage_id in range(6):
+            for seed in range(100):
+                with self.subTest(stage_id=stage_id, seed=seed):
+                    generator = Generator(str(seed), "test", "", stage_id)
+                    generator.generate()
+                    floor = generator._floor
+                    rooms = [
+                        room
+                        for room in floor.get_rooms()
+                        if room.get_type() == RoomType.SUPER_SECRET_ROOM
+                    ]
+                    self.assertEqual(1, len(rooms))
+                    position = (rooms[0][0], rooms[0][1])
+                    self.assertEqual(1, floor.count_neighbours(*position))
+                    self.assertFalse(floor.has_boss_room_as_neighbour(position))
 
     def test_save_writes_the_generated_floor_to_the_given_path(self):
         self._generator.generate()

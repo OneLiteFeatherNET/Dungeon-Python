@@ -62,6 +62,7 @@ LIGHT = Palette(
         RoomType.TELEPORT_ROOM: "#b28fd8",
         RoomType.BOSS_ROOM: "#d9665f",
         RoomType.SECRET_ROOM: "#7393cf",
+        RoomType.SUPER_SECRET_ROOM: "#5fb3b0",
     },
 )
 
@@ -88,6 +89,7 @@ DARK = Palette(
         RoomType.TELEPORT_ROOM: "#8a64b5",
         RoomType.BOSS_ROOM: "#b84d47",
         RoomType.SECRET_ROOM: "#4f6fae",
+        RoomType.SUPER_SECRET_ROOM: "#3f8f8b",
     },
 )
 

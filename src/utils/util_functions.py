@@ -24,6 +24,9 @@ def get_picture_for_room_type(room_type: RoomType):
     # Go up two levels to the project root directory
     project_root = os.path.dirname(os.path.dirname(current_dir))
     # Define the relative path to the image file
+    # The super secret room uses the icon of the secret room
+    if room_type == RoomType.SUPER_SECRET_ROOM:
+        room_type = RoomType.SECRET_ROOM
     image_file = f"{room_type.name.lower()}.png"
     # Join the project root directory with the relative path to get the absolute path
     image_path = os.path.join(project_root, "resources", "room_icons", image_file)
@@ -35,14 +38,15 @@ def get_picture_for_room_type(room_type: RoomType):
 
 def calculate_room_amount(stage_id: int, rng: random.Random) -> int:
     """
-    Calculates the room amount.
-    The generator may place a few more rooms than this,
-    because it adds all neighbours of a room in one step.
+    Calculates the amount of rooms the generator places,
+    without the boss extension, secret and teleport rooms.
     @param stage_id: id for the floor
     @param rng: random number generator to use
     :return: room amount
     """
-    return min(my_globals.MAX_ROOMS, rng.randint(0, 1) + 5 + stage_id * 10 // 3)
+    # Same formula as in "The Binding of Isaac", where the first floor is stage 1
+    stage = stage_id + 1
+    return min(my_globals.MAX_ROOMS, rng.randint(0, 1) + 5 + stage * 10 // 3)
 
 
 def place_room(rng: random.Random) -> bool:

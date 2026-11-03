@@ -47,7 +47,8 @@ class Generator:
         self._floor: Floor = Floor(
             my_globals.FLOOR_HEIGHT, my_globals.FLOOR_WIDTH, seed
         )
-        self._random = random.Random(seed)
+        self._random = random.Random()
+        self._seed_random(seed)
 
     def to_dict(self) -> dict:
         """
@@ -68,6 +69,14 @@ class Generator:
         @return: json string of the generator
         """
         return json.dumps(self.to_dict(), indent=len(my_globals.BASE_INDENT) * indent)
+
+    def _seed_random(self, seed: str) -> None:
+        """
+        Seeds the random number generator with the seed and the floor id,
+        so the same seed produces different floors for different floor ids.
+        @param seed: seed for generating the floor
+        """
+        self._random.seed(f"{seed}/{self._stage_id}")
 
     def _create_floor(self) -> None:
         """
@@ -101,10 +110,32 @@ class Generator:
     def generate(self, new_seed=None) -> None:
         """
         Generates the rooms for the floor.
+        Like in "The Binding of Isaac", a floor is generated again if it does not
+        reach the room amount or has not enough dead ends for the special rooms.
         """
         if new_seed is not None:
-            self._random.seed(new_seed)
+            self._seed_random(new_seed)
             self._seed = new_seed
+        for attempt in range(my_globals.MAX_GENERATION_ATTEMPTS):
+            last_attempt = attempt == my_globals.MAX_GENERATION_ATTEMPTS - 1
+            start_room, complete = self._place_rooms()
+            dead_ends = self.mark_dead_ends()
+            if last_attempt or (
+                complete and len(dead_ends) >= my_globals.REQUIRED_DEAD_ENDS
+            ):
+                break
+        self.add_boss_room(dead_ends, start_room)
+        self.add_special_rooms(dead_ends)
+        self.place_secret_room()
+        self.place_super_secret_room()
+        self._floor.add_doors_to_rooms()
+
+    def _place_rooms(self) -> Tuple[Tuple[int, int], bool]:
+        """
+        Creates a new floor and places the start room and the normal rooms.
+        @return: position of the start room and
+            if the room amount for the floor has been reached
+        """
         self._create_floor()
         floor = self._floor
         number_of_rooms = util_functions.calculate_room_amount(
@@ -112,26 +143,25 @@ class Generator:
         )
 
         # Add start room
-        start_room: tuple = (
+        start_room: Tuple[int, int] = (
             self._random.randint(0, my_globals.FLOOR_WIDTH - 1),
             self._random.randint(0, my_globals.FLOOR_HEIGHT - 1),
         )
         floor.add_room(start_room[0], start_room[1], RoomType.START_ROOM)
         number_of_current_rooms = 1
-        room_tuple_queue: deque = deque([])  # Room coordinates
-        room_tuple_queue.append(start_room)
+        room_tuple_queue: deque = deque([start_room])  # Room coordinates
         room_tuple_list = []
         while number_of_current_rooms < number_of_rooms and len(room_tuple_queue) > 0:
             room_tuple = room_tuple_queue.pop()
             for direction in Direction.main_directions():
+                if number_of_current_rooms >= number_of_rooms:
+                    break
                 new_room_tuple = util_functions.add_direction_to_coordinates(
                     direction, room_tuple
                 )
                 if self._add_new_room(new_room_tuple, room_tuple_queue):
                     number_of_current_rooms += 1
             room_tuple_list.append(room_tuple)
-            if len(room_tuple_queue) == 0 and number_of_current_rooms < number_of_rooms:
-                room_tuple_queue.append(room_tuple_list.pop(0))
 
         while len(room_tuple_queue) > 0:
             room_tuple_list.append(room_tuple_queue.pop())
@@ -139,13 +169,7 @@ class Generator:
         while len(room_tuple_list) > 0:
             room_tuple = room_tuple_list.pop()
             floor.add_room(room_tuple[0], room_tuple[1])
-
-        dead_ends = self.mark_dead_ends()
-        self.add_boss_room(dead_ends, start_room)
-        self.add_special_rooms(dead_ends)
-        self.place_secret_room()
-        self.place_super_secret_room()
-        floor.add_doors_to_rooms()
+        return start_room, number_of_current_rooms >= number_of_rooms
 
     def mark_dead_ends(self) -> list:
         """
@@ -176,62 +200,70 @@ class Generator:
 
     def add_boss_room(self, dead_end_indices: list, start_room: tuple) -> None:
         """
-        Marks a room as the boss room depending on the location of the start room.
+        Turns one of the dead ends farthest away from the start room into the boss room.
+        A dead end with free space next to it is preferred, otherwise the boss room
+        is moved away and connected to the floor with a teleport room.
         @param dead_end_indices: indices for all dead ends
         @param start_room: coordinates of the start room in a tuple
         """
         if len(dead_end_indices) == 0:
             return
         floor = self._floor
-        boss_room: Room
-        possible_locations: list = []
-        boss_room_placed = False
-        boss_room = floor.get_rooms()[dead_end_indices[0]]
-        boss_room_index = dead_end_indices[0]
-        max_distance = 0
-        max_distance_index = 0
-        for index in dead_end_indices:
-            dead_end = floor.get_rooms()[index]
-            current_distance = util_functions.calculate_distance(start_room, dead_end)
-            if max_distance < current_distance:
-                max_distance = current_distance
-                max_distance_index = index
-
-            boss_room = floor.get_rooms()[max_distance_index]
-            boss_room_index = max_distance_index
-
-        boss_room_x = boss_room[0]
-        boss_room_y = boss_room[1]
-        for direction in Direction.main_directions():
-            new_boss_tuple = util_functions.add_direction_to_coordinates(
-                direction, (boss_room_x, boss_room_y)
-            )
-            if (
-                self._floor.is_within_border(new_boss_tuple)
-                and floor.count_neighbours(new_boss_tuple[0], new_boss_tuple[1]) == 1
-                and not self._floor.contains_room(new_boss_tuple)
-            ):
-                possible_locations.append(direction)
+        rooms = floor.get_rooms()
+        farthest_first = sorted(
+            dead_end_indices,
+            key=lambda index: -util_functions.calculate_distance(
+                start_room, rooms[index]
+            ),
+        )
+        candidates = farthest_first[: my_globals.BOSS_ROOM_CANDIDATES]
+        boss_room_index = next(
+            (index for index in candidates if self._free_boss_locations(rooms[index])),
+            farthest_first[0],
+        )
+        boss_room = rooms[boss_room_index]
+        possible_locations = self._free_boss_locations(boss_room)
 
         if len(possible_locations) == 0:
             # Place a teleport-room to the boss-room
             self._place_boss_with_teleport_room(boss_room)
-            boss_room_placed = True
-
-        elif len(possible_locations) >= 2 and self._random.randint(0, 10) < 5:
-            # Create a 2 * 2 boss-room
-            boss_room_placed = self._place_big_boss_room(possible_locations, boss_room)
-
-        if (
-            not boss_room_placed
-            and len(possible_locations) >= 1
-            and self._random.randint(0, 10) < 5
-        ):
-            # Create a 1 * 2 boss-room
-            floor.add_room_next_to(boss_room, possible_locations[0], RoomType.BOSS_ROOM)
+        else:
+            size_roll = self._random.random()
+            placed = (
+                len(possible_locations) >= 2
+                and size_roll < my_globals.BIG_BOSS_ROOM_CHANCE
+                and self._place_big_boss_room(possible_locations, boss_room)
+            )
+            if not placed and size_roll < (
+                my_globals.BIG_BOSS_ROOM_CHANCE + my_globals.LONG_BOSS_ROOM_CHANCE
+            ):
+                # Create a 1 * 2 boss-room
+                floor.add_room_next_to(
+                    boss_room, possible_locations[0], RoomType.BOSS_ROOM
+                )
 
         boss_room.set_type(RoomType.BOSS_ROOM)
         dead_end_indices.remove(boss_room_index)
+
+    def _free_boss_locations(self, room: Room) -> List[Direction]:
+        """
+        Returns the directions in which the boss room could be extended.
+        @param room: possible boss room
+        @return: directions with a free cell that is only next to the room
+        """
+        floor = self._floor
+        locations = []
+        for direction in Direction.main_directions():
+            cell = util_functions.add_direction_to_coordinates(
+                direction, (room[0], room[1])
+            )
+            if (
+                floor.is_within_border(cell)
+                and not floor.contains_room(cell)
+                and floor.count_neighbours(cell[0], cell[1]) == 1
+            ):
+                locations.append(direction)
+        return locations
 
     def _place_big_boss_room(self, possible_locations: List, boss_room: Room) -> bool:
         """
@@ -324,7 +356,7 @@ class Generator:
         It should only have one adjacent room.
         """
         floor = self._floor
-        distance_to_boss = my_globals.MAX_SUPER_SECRET_ROOM_DISTANCE_SQUARED
+        distance_to_boss = float("inf")
         candidate = None
         boss_room = floor.get_boss_room()
         for room in floor.get_rooms():
@@ -343,7 +375,7 @@ class Generator:
                         distance_to_boss = distance
                         candidate = neighbour
         if candidate is not None:
-            floor.add_room(candidate[0], candidate[1], RoomType.SECRET_ROOM)
+            floor.add_room(candidate[0], candidate[1], RoomType.SUPER_SECRET_ROOM)
 
     def place_secret_room(self) -> None:
         """

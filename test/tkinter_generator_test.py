@@ -5,6 +5,7 @@ import time
 import unittest
 from unittest import mock
 
+from floor_test_support import teleport_seed
 from ui_test_support import requires_display
 from utils import globals as my_globals
 
@@ -136,8 +137,7 @@ class TkinterGeneratorTest(unittest.TestCase):
         self.assertEqual(doors, len(self._generator._canvas.find_withtag("door")))
 
     def test_draw_links_teleport_rooms_to_their_target(self):
-        # Seed "2" on floor 2 has a boss room behind a teleport room
-        self._generator.generate("2")
+        self._generator.generate(teleport_seed())
         floor = self._generator._floor
 
         floor.draw()

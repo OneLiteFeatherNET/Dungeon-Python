@@ -13,7 +13,7 @@ from rooms.tkinter.tkinter_room import TkinterRoom
 from utils.room_type import RoomType, room_names
 
 _ROW_HEIGHT = 44
-_WIDTH = 230
+_WIDTH = 260
 
 
 class LegendPanel(ttk.Frame):
