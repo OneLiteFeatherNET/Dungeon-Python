@@ -61,7 +61,9 @@ class TkinterGenerator(Generator):
 
     def _create_floor(self) -> None:
         """
-        Creates a new TkinterFloor and appends it to the floor queue.
+        Creates a new TkinterFloor.
+        The floor is added to the history once the generation has finished,
+        because a generation can create several floors until one fits.
         """
         self._floor = TkinterFloor(
             my_globals.FLOOR_HEIGHT,
@@ -70,7 +72,6 @@ class TkinterGenerator(Generator):
             my_globals.DEFAULT_FLOOR_NAME + my_globals.JSON_SUFFIX,
             self._seed,
         )
-        self._floor_manager.add_floor(self._floor)
 
     def _generate_and_draw_floor(self) -> None:
         """
@@ -178,9 +179,10 @@ class TkinterGenerator(Generator):
 
     def generate(self, new_seed=None) -> None:
         """
-        Generates a new floor and updates the legend.
+        Generates a new floor, adds it to the history and updates the legend.
         """
         super().generate(new_seed)
+        self._floor_manager.add_floor(self._floor)
         self._update_legend()
 
     def _update_legend(self) -> None:

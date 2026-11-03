@@ -263,6 +263,14 @@ class TkinterGeneratorTest(unittest.TestCase):
                     self._press("<space>")
                 generate.assert_called_once()
 
+    def test_each_generation_adds_one_floor_to_the_history(self):
+        # Some seeds need several attempts until a floor fits
+        for seed in ("a", "b", "c", "d", "e"):
+            self._generator.generate(seed)
+
+        self.assertEqual(6, len(self._generator._floor_manager._floors))
+        self.assertTrue(self._generator._floor_manager.position.get().endswith("6 / 6"))
+
 
 if __name__ == "__main__":
     unittest.main()
