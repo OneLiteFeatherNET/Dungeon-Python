@@ -84,7 +84,7 @@ class TkinterGeneratorTest(unittest.TestCase):
             self._press("<Control-t>")
             m.assert_called_once()
 
-        with mock.patch("rooms.tkinter.legend_window.display_legend") as m:
+        with mock.patch.object(generator, "toggle_legend") as m:
             self._press("<F1>")
             m.assert_called_once()
 
@@ -176,6 +176,38 @@ class TkinterGeneratorTest(unittest.TestCase):
 
         self._generator._theme_handler.switch_theme()
         self.assertIs(style.LIGHT, style.get_palette())
+
+    def test_f1_shows_and_hides_the_legend(self):
+        generator = self._generator
+        generator.create_menu_bar()
+        generator._content.pack()
+        generator._apply_legend_visibility()
+
+        self._press("<F1>")
+        self.assertFalse(generator.show_legend.get())
+        self.assertFalse(generator._legend.winfo_ismapped())
+
+        self._press("<F1>")
+        self.assertTrue(generator.show_legend.get())
+        self.assertTrue(generator._legend.winfo_ismapped())
+
+    def test_legend_counts_the_rooms_of_the_current_floor(self):
+        # pylint: disable=import-outside-toplevel
+        from collections import Counter
+
+        generator = self._generator
+        first = generator._floor
+        generator.generate("2")
+
+        def expected(floor):
+            return Counter(room.get_type() for room in floor.get_rooms())
+
+        for room_type, count in expected(generator._floor).items():
+            self.assertEqual(count, generator._legend.get_count(room_type))
+
+        generator._decrease_floor()
+        for room_type, count in expected(first).items():
+            self.assertEqual(count, generator._legend.get_count(room_type))
 
 
 if __name__ == "__main__":

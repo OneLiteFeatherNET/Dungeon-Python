@@ -14,7 +14,7 @@ from floors.tkinter_floor import TkinterFloor
 from generators.floor_manager import FloorManager
 from generators.generator import Generator
 from generators.theme_handler import ThemeHandler
-from rooms.tkinter import legend_window
+from rooms.tkinter.legend_panel import LegendPanel
 from utils import util_functions, globals as my_globals
 
 
@@ -38,8 +38,9 @@ class TkinterGenerator(Generator):
         """
         super().__init__(seed, output_file_name, output_file_path, stage_id)
         self._tk = tk.Tk()
+        self._content = ttk.Frame(self._tk)
         self._canvas = tk.Canvas(
-            self._tk,
+            self._content,
             height=my_globals.FLOOR_HEIGHT * my_globals.ROOM_HEIGHT,
             width=my_globals.FLOOR_WIDTH * my_globals.ROOM_WIDTH,
         )
@@ -49,7 +50,13 @@ class TkinterGenerator(Generator):
         self._theme_handler = ThemeHandler(
             self._tk, self._canvas, on_change=self._redraw_floor
         )
+        self._legend = LegendPanel(self._content)
+        self.show_legend = tk.BooleanVar(self._tk, value=True)
         self._floor_manager = FloorManager(output_file_name)
+        # The position changes whenever another floor is shown
+        self._floor_manager.position.trace_add(
+            "write", lambda *args: self._update_legend()
+        )
         self._tk.protocol("WM_DELETE_WINDOW", self.quit)
 
     def _create_floor(self) -> None:
@@ -146,7 +153,9 @@ class TkinterGenerator(Generator):
         self._tk.resizable(False, False)
         self.generate()
         self._floor_manager.get_current_floor().draw()
-        self._canvas.pack(padx=16, pady=(16, 8))
+        self._content.pack(padx=16, pady=(16, 8))
+        self._canvas.pack(side=tk.LEFT)
+        self._apply_legend_visibility()
         self.add_information_frame()
         self.add_buttons()
         self.create_menu_bar()
@@ -161,9 +170,40 @@ class TkinterGenerator(Generator):
 
     def _redraw_floor(self) -> None:
         """
-        Draws the current floor again, e.g. after the theme has changed.
+        Draws the current floor and the legend again, e.g. after the theme has changed.
         """
-        self._floor_manager.get_current_floor().draw()
+        self._legend.redraw()
+        if self._floor_manager.current_floor_index >= 0:
+            self._floor_manager.get_current_floor().draw()
+
+    def generate(self, new_seed=None) -> None:
+        """
+        Generates a new floor and updates the legend.
+        """
+        super().generate(new_seed)
+        self._update_legend()
+
+    def _update_legend(self) -> None:
+        """
+        Shows the room counts of the current floor in the legend.
+        """
+        self._legend.update_counts(self._floor_manager.get_current_floor())
+
+    def toggle_legend(self) -> None:
+        """
+        Shows or hides the legend next to the floor.
+        """
+        self.show_legend.set(not self.show_legend.get())
+        self._apply_legend_visibility()
+
+    def _apply_legend_visibility(self) -> None:
+        """
+        Shows or hides the legend depending on show_legend.
+        """
+        if self.show_legend.get():
+            self._legend.pack(side=tk.LEFT, anchor=tk.N, padx=(20, 0))
+        else:
+            self._legend.pack_forget()
 
     def _get_bottom_bar(self) -> ttk.Frame:
         """
@@ -272,14 +312,14 @@ class TkinterGenerator(Generator):
             accelerator="Ctrl+t",
         )
         menu_bar.add_command(
-            label="Legend", command=legend_window.display_legend, accelerator="F1"
+            label="Legend", command=self.toggle_legend, accelerator="F1"
         )
         menu_bar.add_command(label="Exit", command=self.quit, accelerator="Ctrl+q")
         self._tk.bind("<Control-o>", lambda event: self.open())
         self._tk.bind("<Control-s>", lambda event: self._save_current_floor())
         self._tk.bind("<Control-S>", lambda event: self.save())
         self._tk.bind("<Control-t>", lambda event: self._theme_handler.switch_theme())
-        self._tk.bind("<F1>", lambda event: legend_window.display_legend())
+        self._tk.bind("<F1>", lambda event: self.toggle_legend())
         self._tk.bind("<Control-q>", lambda event: self.quit())
 
     def _save_current_floor(self) -> None:
