@@ -129,8 +129,25 @@ class GeneratorTest(unittest.TestCase):
 
         self._generator.add_special_rooms([1, 2])
 
-        self.assertEqual(RoomType.ITEM_ROOM, floor.get_rooms()[1].get_type())
-        self.assertEqual(RoomType.SHOP_ROOM, floor.get_rooms()[2].get_type())
+        self.assertEqual(
+            {RoomType.ITEM_ROOM, RoomType.SHOP_ROOM},
+            {floor.get_rooms()[1].get_type(), floor.get_rooms()[2].get_type()},
+        )
+
+    def test_add_special_rooms_prefers_dead_ends_away_from_the_start(self):
+        floor = self._generator._floor
+        floor.add_room(2, 2, RoomType.START_ROOM)
+        floor.add_room(1, 2, RoomType.DEAD_END)  # next to the start room
+        floor.add_room(5, 5, RoomType.DEAD_END)
+        floor.add_room(6, 6, RoomType.DEAD_END)
+
+        self._generator.add_special_rooms([1, 2, 3])
+
+        self.assertEqual(RoomType.DEAD_END, floor.get_rooms()[1].get_type())
+        self.assertEqual(
+            {RoomType.ITEM_ROOM, RoomType.SHOP_ROOM},
+            {floor.get_rooms()[2].get_type(), floor.get_rooms()[3].get_type()},
+        )
 
     def test_add_special_rooms_stops_when_there_are_fewer_dead_ends_than_special_rooms(
         self,
@@ -351,6 +368,21 @@ class GeneratorTest(unittest.TestCase):
     def test_set_stage_id_rejects_negative_ids(self):
         with self.assertRaises(ValueError):
             self._generator.set_stage_id(-1)
+
+    def test_special_rooms_are_never_next_to_the_start(self):
+        for stage_id in (0, 1, 2, 5):
+            for seed in range(100):
+                with self.subTest(stage_id=stage_id, seed=seed):
+                    generator = Generator(str(seed), "test", "", stage_id)
+                    generator.generate()
+                    rooms = generator._floor.get_rooms()
+                    start = next(
+                        r for r in rooms if r.get_type() == RoomType.START_ROOM
+                    )
+                    for room in rooms:
+                        if room.get_type() in (RoomType.ITEM_ROOM, RoomType.SHOP_ROOM):
+                            distance = abs(room[0] - start[0]) + abs(room[1] - start[1])
+                            self.assertGreater(distance, 1)
 
     def test_save_writes_the_generated_floor_to_the_given_path(self):
         self._generator.generate()
