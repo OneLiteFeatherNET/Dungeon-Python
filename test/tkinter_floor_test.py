@@ -4,6 +4,7 @@ import unittest
 
 import numpy
 
+from floor_test_support import teleport_seed
 from floors.floor import Floor
 from generators.generator import Generator
 from rooms.teleport_room import TeleportRoom
@@ -16,7 +17,7 @@ class TkinterFloorTest(unittest.TestCase):
         # pylint: disable=import-outside-toplevel
         from floors.tkinter_floor import TkinterFloor
 
-        generator = Generator("2", "test", "", 2)
+        generator = Generator(teleport_seed(), "test", "", 2)
         generator.generate()
         self._floor = Floor.from_json(generator.to_json(1))
         self._tkinter_floor = TkinterFloor.from_floor(self._floor, None, "floor.json")

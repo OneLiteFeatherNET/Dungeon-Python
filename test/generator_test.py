@@ -11,6 +11,7 @@ from collections import deque
 
 import numpy
 
+from floor_test_support import teleport_seed
 from floors.floor import Floor
 from generators.generator import Generator
 from rooms.teleport_room import TeleportRoom
@@ -271,7 +272,7 @@ class GeneratorTest(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
 
     def test_from_json_restores_teleport_rooms(self):
-        generator = Generator("2", "test", "", 2)
+        generator = Generator(teleport_seed(), "test", "", 2)
         generator.generate()
         original = [
             room

@@ -41,7 +41,7 @@ DEFAULT_FLOOR_DIRECTORY = "generation"
 # Width and height in number of rooms
 FLOOR_WIDTH: int = 9
 FLOOR_HEIGHT: int = 8
-MAX_ROOMS: int = 15
+MAX_ROOMS: int = 20
 # The super secret room is only placed closer than this to the boss room
 # (squared distance, 25 means a distance below 5 rooms)
 MAX_SUPER_SECRET_ROOM_DISTANCE_SQUARED: int = 25

@@ -47,7 +47,8 @@ class Generator:
         self._floor: Floor = Floor(
             my_globals.FLOOR_HEIGHT, my_globals.FLOOR_WIDTH, seed
         )
-        self._random = random.Random(seed)
+        self._random = random.Random()
+        self._seed_random(seed)
 
     def to_dict(self) -> dict:
         """
@@ -68,6 +69,14 @@ class Generator:
         @return: json string of the generator
         """
         return json.dumps(self.to_dict(), indent=len(my_globals.BASE_INDENT) * indent)
+
+    def _seed_random(self, seed: str) -> None:
+        """
+        Seeds the random number generator with the seed and the floor id,
+        so the same seed produces different floors for different floor ids.
+        @param seed: seed for generating the floor
+        """
+        self._random.seed(f"{seed}/{self._stage_id}")
 
     def _create_floor(self) -> None:
         """
@@ -103,7 +112,7 @@ class Generator:
         Generates the rooms for the floor.
         """
         if new_seed is not None:
-            self._random.seed(new_seed)
+            self._seed_random(new_seed)
             self._seed = new_seed
         self._create_floor()
         floor = self._floor
