@@ -96,6 +96,7 @@ A negative floor id returns `422`.
 {
   "_width": 9,
   "_height": 8,
+  "_floor_id": 2,
   "_floor": {
     "_seed": "2",
     "_rooms": [
@@ -123,6 +124,7 @@ A negative floor id returns `422`.
 | Field | Description |
 |---|---|
 | `_width`, `_height` | Size of the floor in rooms |
+| `_floor_id` | Floor id the floor was generated for. Together with the seed it reproduces the floor |
 | `_floor._seed` | Seed the floor was generated with |
 | `_floor._rooms` | List of all rooms |
 | `_id` | Id of the room, unique within the floor |

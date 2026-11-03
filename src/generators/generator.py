@@ -55,12 +55,15 @@ class Generator:
         Creates a dictionary representation of the generator object.
         @return: dictionary with the size and the floor of the generator
         """
-        return {
+        generator_dict: dict = {
             "_width": my_globals.FLOOR_WIDTH,
             "_height": my_globals.FLOOR_HEIGHT,
-            "_floor": self._floor.to_dict(),
-            "_generated_by": "python",
         }
+        if self._floor.floor_id is not None:
+            generator_dict["_floor_id"] = self._floor.floor_id
+        generator_dict["_floor"] = self._floor.to_dict()
+        generator_dict["_generated_by"] = "python"
+        return generator_dict
 
     def to_json(self, indent: int = 1) -> str:
         """
@@ -69,6 +72,15 @@ class Generator:
         @return: json string of the generator
         """
         return json.dumps(self.to_dict(), indent=len(my_globals.BASE_INDENT) * indent)
+
+    def set_stage_id(self, stage_id: int) -> None:
+        """
+        Sets the id of the floor that the next generation creates.
+        @param stage_id: id for the floor (must be 0 or greater)
+        """
+        if stage_id < 0:
+            raise ValueError(f"stage_id must be 0 or greater, got {stage_id}")
+        self._stage_id = stage_id
 
     def _seed_random(self, seed: str) -> None:
         """
@@ -83,6 +95,7 @@ class Generator:
         Creates a new floor.
         """
         self._floor = Floor(my_globals.FLOOR_HEIGHT, my_globals.FLOOR_WIDTH, self._seed)
+        self._floor.floor_id = self._stage_id
 
     def _add_new_room(
         self, new_room_tuple: Tuple[int, int], room_tuple_queue: deque

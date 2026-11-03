@@ -38,6 +38,8 @@ class Floor:
         self._height: int = height
         self._room_id: int = 0
         self.seed: str = seed
+        # Id of the floor the rooms were generated for, unknown for old files
+        self.floor_id: Optional[int] = None
 
     def top_left(self) -> Tuple[int, int]:
         """
@@ -99,6 +101,7 @@ class Floor:
             floor._rooms.append(room)
             floor.add_to_floor_grid(room[0], room[1])
         floor._room_id = max((room.get_id() for room in floor._rooms), default=-1) + 1
+        floor.floor_id = json_dict.get("_floor_id")
         return floor
 
     def add_to_floor_grid(self, x: int, y: int) -> None:
