@@ -46,8 +46,11 @@ A number based on the current time is appended to the file name, e.g. `generatio
 python src/main.py --ui
 ```
 
-The UI draws a generated floor room by room. Every generated floor is kept,
-so you can switch between them.
+The UI draws a generated floor room by room, including the doors between the rooms
+and an arrow from a teleport room to its target. Every generated floor is kept,
+so you can switch between them. A legend next to the floor shows the room types
+and how often they appear on the current floor.
+All actions are also available in the File, View and Floor menus.
 
 | Key | Action |
 |---|---|
@@ -58,7 +61,7 @@ so you can switch between them.
 | `Ctrl+S` | Save the current floor |
 | `Ctrl+Shift+S` | Save the current floor as a new file |
 | `Ctrl+T` | Switch between light and dark theme |
-| `F1` | Show the legend of the room colors |
+| `F1` | Show or hide the legend |
 | `Ctrl+Q` | Quit |
 
 ## REST API
