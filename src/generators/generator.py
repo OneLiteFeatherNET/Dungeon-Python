@@ -356,7 +356,7 @@ class Generator:
         It should only have one adjacent room.
         """
         floor = self._floor
-        distance_to_boss = my_globals.MAX_SUPER_SECRET_ROOM_DISTANCE_SQUARED
+        distance_to_boss = float("inf")
         candidate = None
         boss_room = floor.get_boss_room()
         for room in floor.get_rooms():
@@ -375,7 +375,7 @@ class Generator:
                         distance_to_boss = distance
                         candidate = neighbour
         if candidate is not None:
-            floor.add_room(candidate[0], candidate[1], RoomType.SECRET_ROOM)
+            floor.add_room(candidate[0], candidate[1], RoomType.SUPER_SECRET_ROOM)
 
     def place_secret_room(self) -> None:
         """

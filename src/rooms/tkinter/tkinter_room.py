@@ -11,6 +11,8 @@ from utils import util_functions, globals as my_globals
 from utils.globals import DoorFace
 from utils.room_type import RoomType
 
+_SECRET_ROOMS = (RoomType.SECRET_ROOM, RoomType.SUPER_SECRET_ROOM)
+
 
 def _rounded_rectangle(x0, y0, x1, y1, radius) -> List[float]:
     """
@@ -68,7 +70,7 @@ class TkinterRoom(Room):
             fill=palette.rooms[self._type],
             outline=palette.room_outline,
             width=2,
-            dash=(4, 3) if self._type == RoomType.SECRET_ROOM else (),
+            dash=(4, 3) if self._type in _SECRET_ROOMS else (),
             tags=("room",),
         )
         if self._type == RoomType.TELEPORT_ROOM:

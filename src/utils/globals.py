@@ -51,9 +51,6 @@ BIG_BOSS_ROOM_CHANCE: float = 0.1
 LONG_BOSS_ROOM_CHANCE: float = 0.2
 # Number of farthest dead ends that are tried for the boss room before a teleport is used
 BOSS_ROOM_CANDIDATES: int = 2
-# The super secret room is only placed closer than this to the boss room
-# (squared distance, 25 means a distance below 5 rooms)
-MAX_SUPER_SECRET_ROOM_DISTANCE_SQUARED: int = 25
 # Distance between start and boss room
 X_OFFSET = (FLOOR_WIDTH * ROOM_WIDTH) / 2
 Y_OFFSET = 0

@@ -140,6 +140,7 @@ A negative floor id returns `422`.
 | 5 | Teleport room |
 | 6 | Boss room |
 | 7 | Secret room |
+| 8 | Super secret room, connected to only one room and placed close to the boss room |
 
 A boss room can span up to 2 × 2 cells, every cell is stored as its own room.
 On some floors the boss room is moved to a free cell away from the other rooms

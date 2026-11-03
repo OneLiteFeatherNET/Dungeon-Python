@@ -41,6 +41,7 @@ class RoomType(Enum):
             RoomType.SHOP_ROOM,
             RoomType.BOSS_ROOM,
             RoomType.SECRET_ROOM,
+            RoomType.SUPER_SECRET_ROOM,
         )
 
     NORMAL_ROOM = 0
@@ -51,6 +52,7 @@ class RoomType(Enum):
     TELEPORT_ROOM = 5
     BOSS_ROOM = 6
     SECRET_ROOM = 7
+    SUPER_SECRET_ROOM = 8
 
 
 room_names = {
@@ -62,6 +64,7 @@ room_names = {
     RoomType.TELEPORT_ROOM: "Teleport Room",
     RoomType.BOSS_ROOM: "Boss Room",
     RoomType.SECRET_ROOM: "Secret Room",
+    RoomType.SUPER_SECRET_ROOM: "Super Secret Room",
 }
 
 SPECIAL_ROOMS = (RoomType.ITEM_ROOM, RoomType.SHOP_ROOM)

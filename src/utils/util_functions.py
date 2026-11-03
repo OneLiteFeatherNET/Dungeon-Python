@@ -24,6 +24,9 @@ def get_picture_for_room_type(room_type: RoomType):
     # Go up two levels to the project root directory
     project_root = os.path.dirname(os.path.dirname(current_dir))
     # Define the relative path to the image file
+    # The super secret room uses the icon of the secret room
+    if room_type == RoomType.SUPER_SECRET_ROOM:
+        room_type = RoomType.SECRET_ROOM
     image_file = f"{room_type.name.lower()}.png"
     # Join the project root directory with the relative path to get the absolute path
     image_path = os.path.join(project_root, "resources", "room_icons", image_file)
