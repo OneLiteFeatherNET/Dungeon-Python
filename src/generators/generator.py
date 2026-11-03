@@ -110,10 +110,32 @@ class Generator:
     def generate(self, new_seed=None) -> None:
         """
         Generates the rooms for the floor.
+        Like in "The Binding of Isaac", a floor is generated again if it does not
+        reach the room amount or has not enough dead ends for the special rooms.
         """
         if new_seed is not None:
             self._seed_random(new_seed)
             self._seed = new_seed
+        for attempt in range(my_globals.MAX_GENERATION_ATTEMPTS):
+            last_attempt = attempt == my_globals.MAX_GENERATION_ATTEMPTS - 1
+            start_room, complete = self._place_rooms()
+            dead_ends = self.mark_dead_ends()
+            if last_attempt or (
+                complete and len(dead_ends) >= my_globals.REQUIRED_DEAD_ENDS
+            ):
+                break
+        self.add_boss_room(dead_ends, start_room)
+        self.add_special_rooms(dead_ends)
+        self.place_secret_room()
+        self.place_super_secret_room()
+        self._floor.add_doors_to_rooms()
+
+    def _place_rooms(self) -> Tuple[Tuple[int, int], bool]:
+        """
+        Creates a new floor and places the start room and the normal rooms.
+        @return: position of the start room and
+            if the room amount for the floor has been reached
+        """
         self._create_floor()
         floor = self._floor
         number_of_rooms = util_functions.calculate_room_amount(
@@ -121,26 +143,25 @@ class Generator:
         )
 
         # Add start room
-        start_room: tuple = (
+        start_room: Tuple[int, int] = (
             self._random.randint(0, my_globals.FLOOR_WIDTH - 1),
             self._random.randint(0, my_globals.FLOOR_HEIGHT - 1),
         )
         floor.add_room(start_room[0], start_room[1], RoomType.START_ROOM)
         number_of_current_rooms = 1
-        room_tuple_queue: deque = deque([])  # Room coordinates
-        room_tuple_queue.append(start_room)
+        room_tuple_queue: deque = deque([start_room])  # Room coordinates
         room_tuple_list = []
         while number_of_current_rooms < number_of_rooms and len(room_tuple_queue) > 0:
             room_tuple = room_tuple_queue.pop()
             for direction in Direction.main_directions():
+                if number_of_current_rooms >= number_of_rooms:
+                    break
                 new_room_tuple = util_functions.add_direction_to_coordinates(
                     direction, room_tuple
                 )
                 if self._add_new_room(new_room_tuple, room_tuple_queue):
                     number_of_current_rooms += 1
             room_tuple_list.append(room_tuple)
-            if len(room_tuple_queue) == 0 and number_of_current_rooms < number_of_rooms:
-                room_tuple_queue.append(room_tuple_list.pop(0))
 
         while len(room_tuple_queue) > 0:
             room_tuple_list.append(room_tuple_queue.pop())
@@ -148,13 +169,7 @@ class Generator:
         while len(room_tuple_list) > 0:
             room_tuple = room_tuple_list.pop()
             floor.add_room(room_tuple[0], room_tuple[1])
-
-        dead_ends = self.mark_dead_ends()
-        self.add_boss_room(dead_ends, start_room)
-        self.add_special_rooms(dead_ends)
-        self.place_secret_room()
-        self.place_super_secret_room()
-        floor.add_doors_to_rooms()
+        return start_room, number_of_current_rooms >= number_of_rooms
 
     def mark_dead_ends(self) -> list:
         """

@@ -42,6 +42,10 @@ DEFAULT_FLOOR_DIRECTORY = "generation"
 FLOOR_WIDTH: int = 9
 FLOOR_HEIGHT: int = 8
 MAX_ROOMS: int = 20
+# A floor is generated again if it has less dead ends than the boss, item and shop room need
+REQUIRED_DEAD_ENDS: int = 3
+# Upper limit for generating a floor again, the last attempt is always kept
+MAX_GENERATION_ATTEMPTS: int = 200
 # The super secret room is only placed closer than this to the boss room
 # (squared distance, 25 means a distance below 5 rooms)
 MAX_SUPER_SECRET_ROOM_DISTANCE_SQUARED: int = 25

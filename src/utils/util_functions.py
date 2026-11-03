@@ -35,9 +35,8 @@ def get_picture_for_room_type(room_type: RoomType):
 
 def calculate_room_amount(stage_id: int, rng: random.Random) -> int:
     """
-    Calculates the room amount.
-    The generator may place a few more rooms than this,
-    because it adds all neighbours of a room in one step.
+    Calculates the amount of rooms the generator places,
+    without the boss extension, secret and teleport rooms.
     @param stage_id: id for the floor
     @param rng: random number generator to use
     :return: room amount
