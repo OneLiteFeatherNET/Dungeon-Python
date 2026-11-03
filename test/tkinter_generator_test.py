@@ -159,6 +159,24 @@ class TkinterGeneratorTest(unittest.TestCase):
 
         self.assertEqual(1, len(self._generator._canvas.find_withtag("link")))
 
+    def test_switching_the_theme_redraws_the_floor_in_the_new_colors(self):
+        # pylint: disable=import-outside-toplevel
+        from rooms.tkinter import style
+
+        floor = self._generator._floor
+        floor.draw()
+        canvas = self._generator._canvas
+
+        self._generator._theme_handler.switch_theme()
+
+        self.assertIs(style.DARK, style.get_palette())
+        self.assertEqual(style.DARK.canvas, canvas.cget("background"))
+        start_room = canvas.find_withtag("room")[0]
+        self.assertIn(canvas.itemcget(start_room, "fill"), style.DARK.rooms.values())
+
+        self._generator._theme_handler.switch_theme()
+        self.assertIs(style.LIGHT, style.get_palette())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,6 +5,7 @@ Module for the TkinterGenerator class.
 import os
 import secrets
 import tkinter as tk
+from typing import Optional
 from tkinter import filedialog, messagebox
 from tkinter import ttk
 
@@ -37,16 +38,17 @@ class TkinterGenerator(Generator):
         """
         super().__init__(seed, output_file_name, output_file_path, stage_id)
         self._tk = tk.Tk()
-        color = my_globals.Color.LIGHT_GRAY.value
-        hex_color = util_functions.rgb2hex(color[0], color[1], color[2])
         self._canvas = tk.Canvas(
+            self._tk,
             height=my_globals.FLOOR_HEIGHT * my_globals.ROOM_HEIGHT,
             width=my_globals.FLOOR_WIDTH * my_globals.ROOM_WIDTH,
-            background=hex_color,
         )
+        self._bottom_bar: Optional[ttk.Frame] = None
         self._path = tk.StringVar()
         self._path.set(self._output_file_path)
-        self._theme_handler = ThemeHandler(self._tk, self._canvas)
+        self._theme_handler = ThemeHandler(
+            self._tk, self._canvas, on_change=self._redraw_floor
+        )
         self._floor_manager = FloorManager(output_file_name)
         self._tk.protocol("WM_DELETE_WINDOW", self.quit)
 
@@ -141,11 +143,10 @@ class TkinterGenerator(Generator):
         Sets up the ui elements and starts the main loop of the application.
         """
         self._tk.title(util_functions.window_title)
-        self._tk.geometry(util_functions.window_size)
         self._tk.resizable(False, False)
         self.generate()
         self._floor_manager.get_current_floor().draw()
-        self._canvas.pack(anchor=tk.NW, expand=True)
+        self._canvas.pack(padx=16, pady=(16, 8))
         self.add_information_frame()
         self.add_buttons()
         self.create_menu_bar()
@@ -158,29 +159,44 @@ class TkinterGenerator(Generator):
         if messagebox.askyesno("Quit", "Do you really want to quit?"):
             self._tk.quit()
 
+    def _redraw_floor(self) -> None:
+        """
+        Draws the current floor again, e.g. after the theme has changed.
+        """
+        self._floor_manager.get_current_floor().draw()
+
+    def _get_bottom_bar(self) -> ttk.Frame:
+        """
+        Returns the bar below the floor that contains the status and the controls.
+        """
+        if self._bottom_bar is None:
+            self._bottom_bar = ttk.Frame(self._tk, padding=(16, 0, 16, 14))
+            self._bottom_bar.pack(fill=tk.X)
+        return self._bottom_bar
+
     def add_information_frame(self) -> None:
         """
-        Adds a frame to the application which shows information about the current floor.
+        Adds the status of the current floor below the floor.
         """
-        information_frame = ttk.Frame()
-        # Create information frame
-        information_frame.pack(pady=(0, 10))
-        name_text = ttk.Label(information_frame, text="Floor name: ")
-        name_text.pack(side=tk.LEFT)
+        status = ttk.Frame(self._get_bottom_bar())
+        status.pack(side=tk.LEFT)
         name_label = ttk.Label(
-            information_frame, textvariable=self._floor_manager.current_floor_name
+            status,
+            textvariable=self._floor_manager.current_floor_name,
+            font=("DejaVu Sans", 10, "bold"),
         )
         name_label.pack(side=tk.LEFT)
-        path_text = ttk.Label(information_frame, text="Current path: ")
-        path_text.pack(side=tk.LEFT, padx=(25, 0))
-        path_label = ttk.Label(information_frame, textvariable=self._path)
-        path_label.pack(side=tk.LEFT)
-        seed_text = ttk.Label(information_frame, text="Seed: ")
-        seed_text.pack(side=tk.LEFT, padx=(25, 0))
-        seed_label = ttk.Label(
-            information_frame, textvariable=self._floor_manager.current_floor_seed_var
-        )
-        seed_label.pack(side=tk.LEFT)
+        _ToolTip(name_label, self._path)
+        ttk.Label(status, text="  ·  Seed ", style="Muted.TLabel").pack(side=tk.LEFT)
+        ttk.Label(
+            status,
+            textvariable=self._floor_manager.current_floor_seed_var,
+            style="Muted.TLabel",
+        ).pack(side=tk.LEFT)
+        ttk.Label(status, text="  ·  ", style="Muted.TLabel").pack(side=tk.LEFT)
+        ttk.Label(
+            status, textvariable=self._floor_manager.position, style="Muted.TLabel"
+        ).pack(side=tk.LEFT)
 
     def _increase_floor(self) -> None:
         """
@@ -200,34 +216,39 @@ class TkinterGenerator(Generator):
         """
         Adds buttons to the application.
         """
-        # Create button frame
-        button_frame = ttk.Frame(self._tk)
-        button_frame.pack(pady=(0, 10))
-        button_pre = ttk.Button(button_frame, text="<-", command=self._decrease_floor)
-        button_pre.pack(side=tk.LEFT, padx=10)
+        button_frame = ttk.Frame(self._get_bottom_bar())
+        button_frame.pack(side=tk.RIGHT)
+        button_pre = ttk.Button(
+            button_frame, text="◀", width=3, command=self._decrease_floor
+        )
+        button_pre.pack(side=tk.LEFT)
         # Left arrow to decrease
         self._tk.bind("<Left>", lambda event: self._decrease_floor())
         button_gen = ttk.Button(
             button_frame, text="Generate", command=self._generate_and_draw_floor
         )
-        button_gen.pack(side=tk.LEFT, padx=10)
+        button_gen.pack(side=tk.LEFT, padx=6)
         # Space to generate
         self._tk.bind("<space>", lambda event: self._generate_and_draw_floor())
-        button_next = ttk.Button(button_frame, text="->", command=self._increase_floor)
-        button_next.pack(side=tk.LEFT, padx=10)
+        button_next = ttk.Button(
+            button_frame, text="▶", width=3, command=self._increase_floor
+        )
+        button_next.pack(side=tk.LEFT)
         # Right arrow to increase
         self._tk.bind("<Right>", lambda event: self._increase_floor())
         # Next seed entry
-        next_seed_label = ttk.Label(button_frame, text="Next seed: ")
-        next_seed_label.pack(side=tk.LEFT, padx=10)
+        next_seed_label = ttk.Label(
+            button_frame, text="Next seed", style="Muted.TLabel"
+        )
+        next_seed_label.pack(side=tk.LEFT, padx=(20, 6))
         self._next_seed_entry = ttk.Entry(
-            button_frame, textvariable=self._floor_manager.next_seed
+            button_frame, textvariable=self._floor_manager.next_seed, width=34
         )
         # Enter generates a floor with the entered seed
         self._next_seed_entry.bind(
             "<Return>", lambda event: self._generate_and_draw_floor()
         )
-        self._next_seed_entry.pack(side=tk.LEFT, padx=10)
+        self._next_seed_entry.pack(side=tk.LEFT)
 
     def create_menu_bar(self) -> None:
         """
@@ -266,3 +287,33 @@ class TkinterGenerator(Generator):
         Saves the current floor to the current output file.
         """
         self.save(os.path.join(self._output_file_path, self._output_file_name))
+
+
+class _ToolTip:
+    """
+    Shows the value of a variable in a small window while the mouse is over a widget.
+    """
+
+    def __init__(self, widget: tk.Widget, text: tk.StringVar) -> None:
+        self._widget = widget
+        self._text = text
+        self._window: Optional[tk.Toplevel] = None
+        widget.bind("<Enter>", lambda event: self._show())
+        widget.bind("<Leave>", lambda event: self._hide())
+
+    def _show(self) -> None:
+        if self._window is not None or not self._text.get():
+            return
+        self._window = tk.Toplevel(self._widget)
+        self._window.wm_overrideredirect(True)
+        x = self._widget.winfo_rootx()
+        y = self._widget.winfo_rooty() - 28
+        self._window.wm_geometry(f"+{x}+{y}")
+        ttk.Label(
+            self._window, textvariable=self._text, padding=(6, 2), relief=tk.SOLID
+        ).pack()
+
+    def _hide(self) -> None:
+        if self._window is not None:
+            self._window.destroy()
+            self._window = None

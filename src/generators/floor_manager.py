@@ -25,6 +25,7 @@ class FloorManager:
         self.current_floor_name = tk.StringVar()
         self.current_floor_name.set(output_file_name)
         self.current_floor_seed_var = tk.StringVar()
+        self.position = tk.StringVar()
         self.next_seed = tk.StringVar()
         self.next_seed.set(secrets.token_hex(16))
 
@@ -37,6 +38,7 @@ class FloorManager:
         self.current_floor_index = len(self._floors) - 1
         self.current_floor_name.set(floor.name)
         self.current_floor_seed_var.set(floor.seed)
+        self._update_position()
 
     def get_current_floor(self) -> TkinterFloor:
         """
@@ -63,6 +65,7 @@ class FloorManager:
             self._floors[self.current_floor_index].draw()
             self.current_floor_name.set(self._floors[self.current_floor_index].name)
             self.current_floor_seed_var.set(self.get_current_floor().seed)
+            self._update_position()
 
     def increase_floor(self) -> None:
         """
@@ -76,3 +79,10 @@ class FloorManager:
             current_floor.draw()
             self.current_floor_name.set(current_floor.name)
             self.current_floor_seed_var.set(self.get_current_floor().seed)
+            self._update_position()
+
+    def _update_position(self) -> None:
+        """
+        Updates the text that shows which floor is displayed.
+        """
+        self.position.set(f"Floor {self.current_floor_index + 1} / {len(self._floors)}")
