@@ -5,7 +5,7 @@ Module for the TkinterGenerator class.
 import os
 import secrets
 import tkinter as tk
-from typing import Callable, Optional
+from typing import Callable, List, Optional, Union
 from tkinter import filedialog, messagebox
 from tkinter import ttk
 
@@ -15,6 +15,7 @@ from generators.floor_manager import FloorManager
 from generators.generator import Generator
 from generators.theme_handler import ThemeHandler
 from rooms.tkinter.legend_panel import LegendPanel
+from rooms.tkinter.tooltip import RoomToolTip, ToolTip
 from utils import util_functions, globals as my_globals
 
 # Highest floor id that can be entered in the floor field
@@ -63,6 +64,8 @@ class TkinterGenerator(Generator):
             self._tk, self._canvas, on_change=self._redraw_floor
         )
         self._legend = LegendPanel(self._content)
+        self._room_tooltip = RoomToolTip(self._canvas, self._get_shown_floor)
+        self._tooltips: List[ToolTip] = []
         self.show_legend = tk.BooleanVar(self._tk, value=True)
         self._floor_manager = FloorManager(output_file_name)
         # Floor id for the next generated floor, edited in the floor field
@@ -221,10 +224,30 @@ class TkinterGenerator(Generator):
         self._floor_manager.add_floor(self._floor)
         self._update_legend()
 
+    def _add_tooltip(
+        self, widget: tk.Widget, text: Union[str, tk.StringVar, Callable[[], str]]
+    ) -> None:
+        """
+        Adds a tooltip to a widget and keeps a reference to it.
+        @param widget: widget that shows the tooltip
+        @param text: text, variable or function that returns the text
+        """
+        self._tooltips.append(ToolTip(widget, text))
+
+    def _get_shown_floor(self) -> Optional[TkinterFloor]:
+        """
+        Returns the floor that is shown on the canvas or None before the first floor.
+        """
+        if self._floor_manager.current_floor_index < 0:
+            return None
+        return self._floor_manager.get_current_floor()
+
     def _update_legend(self) -> None:
         """
-        Shows the room counts of the current floor in the legend.
+        Shows the room counts of the current floor in the legend
+        and hides the room tooltip of the previous floor.
         """
+        self._room_tooltip.hide()
         self._legend.update_counts(self._floor_manager.get_current_floor())
 
     def toggle_legend(self) -> None:
@@ -264,7 +287,7 @@ class TkinterGenerator(Generator):
             font=("DejaVu Sans", 10, "bold"),
         )
         name_label.pack(side=tk.LEFT)
-        _ToolTip(name_label, self._path)
+        self._add_tooltip(name_label, self._path)
         ttk.Label(status, text="  ·  Seed ", style="Muted.TLabel").pack(side=tk.LEFT)
         ttk.Label(
             status,
@@ -282,9 +305,7 @@ class TkinterGenerator(Generator):
             status, textvariable=self._floor_manager.position, style="Muted.TLabel"
         )
         position_label.pack(side=tk.LEFT)
-        _ToolTip(
-            position_label, tk.StringVar(self._tk, value="Position in the history")
-        )
+        self._add_tooltip(position_label, "Position in the history of generated floors")
 
     def _increase_floor(self) -> None:
         """
@@ -310,12 +331,14 @@ class TkinterGenerator(Generator):
             button_frame, text="◀", width=3, command=self._decrease_floor
         )
         button_pre.pack(side=tk.LEFT)
+        self._add_tooltip(button_pre, "Back to the previous floor (←)")
         # Left arrow to decrease
         self._tk.bind("<Left>", self._shortcut(lambda: self._decrease_floor()))
         button_gen = ttk.Button(
             button_frame, text="Generate", command=self._generate_and_draw_floor
         )
         button_gen.pack(side=tk.LEFT, padx=6)
+        self._add_tooltip(button_gen, "Generate a new floor (Space)")
         # Space to generate
         self._tk.bind(
             "<space>", self._shortcut(lambda: self._generate_and_draw_floor())
@@ -324,6 +347,7 @@ class TkinterGenerator(Generator):
             button_frame, text="▶", width=3, command=self._increase_floor
         )
         button_next.pack(side=tk.LEFT)
+        self._add_tooltip(button_next, "Forward to the next floor (→)")
         # Right arrow to increase
         self._tk.bind("<Right>", self._shortcut(lambda: self._increase_floor()))
         # Floor id for the next floor
@@ -342,6 +366,11 @@ class TkinterGenerator(Generator):
         self._floor_id_entry.bind("<Return>", lambda event: self._submit_seed())
         self._floor_id_entry.bind("<Escape>", lambda event: self._tk.focus_set())
         self._floor_id_entry.pack(side=tk.LEFT)
+        self._add_tooltip(
+            self._floor_id_entry,
+            "Floor id for the next floor, higher ids get more rooms\n"
+            "(Page Up / Page Down)",
+        )
         self._tk.bind("<Prior>", self._shortcut(lambda: self.change_floor_id(1)))
         self._tk.bind("<Next>", self._shortcut(lambda: self.change_floor_id(-1)))
         # Next seed entry
@@ -358,6 +387,10 @@ class TkinterGenerator(Generator):
         self._next_seed_entry.bind("<Escape>", lambda event: self._tk.focus_set())
         self._canvas.bind("<Button-1>", lambda event: self._tk.focus_set())
         self._next_seed_entry.pack(side=tk.LEFT)
+        self._add_tooltip(
+            self._next_seed_entry,
+            "Seed for the next floor, press Enter to generate it",
+        )
 
     def _submit_seed(self) -> None:
         """
@@ -459,33 +492,3 @@ class TkinterGenerator(Generator):
         Saves the current floor to the current output file.
         """
         self.save(os.path.join(self._output_file_path, self._output_file_name))
-
-
-class _ToolTip:
-    """
-    Shows the value of a variable in a small window while the mouse is over a widget.
-    """
-
-    def __init__(self, widget: tk.Widget, text: tk.StringVar) -> None:
-        self._widget = widget
-        self._text = text
-        self._window: Optional[tk.Toplevel] = None
-        widget.bind("<Enter>", lambda event: self._show())
-        widget.bind("<Leave>", lambda event: self._hide())
-
-    def _show(self) -> None:
-        if self._window is not None or not self._text.get():
-            return
-        self._window = tk.Toplevel(self._widget)
-        self._window.wm_overrideredirect(True)
-        x = self._widget.winfo_rootx()
-        y = self._widget.winfo_rooty() - 28
-        self._window.wm_geometry(f"+{x}+{y}")
-        ttk.Label(
-            self._window, textvariable=self._text, padding=(6, 2), relief=tk.SOLID
-        ).pack()
-
-    def _hide(self) -> None:
-        if self._window is not None:
-            self._window.destroy()
-            self._window = None

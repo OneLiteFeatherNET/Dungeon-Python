@@ -232,11 +232,11 @@ class Floor:
         """
         return 0 <= coordinates[0] < self._width and 0 <= coordinates[1] < self._height
 
-    def _get_room(self, coordinates: Tuple[int, int]) -> Optional[Room]:
+    def get_room(self, coordinates: Tuple[int, int]) -> Optional[Room]:
         """
         Returns the room at the given coordinates.
         @param coordinates: coordinates of the room
-        @return: room
+        @return: room or None if there is no room
         """
         for room in self._rooms:
             if room[0] == coordinates[0] and room[1] == coordinates[1]:
@@ -256,7 +256,7 @@ class Floor:
             if self.is_within_border(new_coordinates) and self.contains_room(
                 new_coordinates
             ):
-                room = self._get_room(new_coordinates)
+                room = self.get_room(new_coordinates)
                 if room is not None and room.get_type() == RoomType.BOSS_ROOM:
                     return True
         return False
@@ -280,7 +280,7 @@ class Floor:
             if self.is_within_border(new_coordinates) and self.contains_room(
                 new_coordinates
             ):
-                room = self._get_room(new_coordinates)
+                room = self.get_room(new_coordinates)
                 if room is not None and room.get_type().is_special():
                     return True
         return False
