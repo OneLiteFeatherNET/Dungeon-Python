@@ -318,13 +318,13 @@ class Generator:
 
     def place_super_secret_room(self) -> None:
         """
-        Places a super secret room on the flor.
+        Places a super secret room on the floor.
         The super secret room should be as close as possible to the boss room
         but should not be adjacent to the boss room.
-        There should only have one adjacent room.
+        It should only have one adjacent room.
         """
         floor = self._floor
-        distance_to_boss = 25
+        distance_to_boss = my_globals.MAX_SUPER_SECRET_ROOM_DISTANCE_SQUARED
         candidate = None
         boss_room = floor.get_boss_room()
         for room in floor.get_rooms():

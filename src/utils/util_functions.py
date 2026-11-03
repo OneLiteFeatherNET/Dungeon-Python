@@ -4,7 +4,6 @@ This module contains utility functions for the floor generator.
 
 import os
 import random
-import math
 from typing import Tuple
 
 import utils.globals as my_globals
@@ -37,14 +36,13 @@ def get_picture_for_room_type(room_type: RoomType):
 def calculate_room_amount(stage_id: int, rng: random.Random) -> int:
     """
     Calculates the room amount.
+    The generator may place a few more rooms than this,
+    because it adds all neighbours of a room in one step.
     @param stage_id: id for the floor
     @param rng: random number generator to use
     :return: room amount
     """
-    return min(
-        my_globals.MAX_ROOMS,
-        int(rng.randint(0, 1) + 5 + math.floor(stage_id * 10) / 3.0),
-    )
+    return min(my_globals.MAX_ROOMS, rng.randint(0, 1) + 5 + stage_id * 10 // 3)
 
 
 def place_room(rng: random.Random) -> bool:
