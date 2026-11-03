@@ -1,30 +1,58 @@
 """
-This module contains the function to display the legend on the canvas.
+This module contains the function to display the legend of the room types.
 """
 
 import tkinter as tk
 
-import utils.globals as my_globals
-from utils import util_functions
-from utils.room_type import RoomType, room_colors, room_names
+from rooms.tkinter import style
+from rooms.tkinter.tkinter_room import TkinterRoom
+from utils.room_type import RoomType, room_names
+
+_ROW_HEIGHT = 44
 
 
 def display_legend():
     """
-    Displays the legend on the canvas.
+    Displays the legend of the room types in a new window.
     """
-    legend_window = tk.Toplevel()
+    palette = style.get_palette()
+    legend_window = tk.Toplevel(background=palette.window)
     legend_window.title("Room Type Legend")
-    legend_canvas = tk.Canvas(legend_window)
-    legend_canvas.pack()
-    y_offset = 10
-    room_type: RoomType
-    for room_type in RoomType.get_all():
-        color: my_globals.Color = room_colors[room_type]
-        legend_canvas.create_rectangle(
-            10, y_offset, 30, y_offset + 20, fill=util_functions.rgb2hex(*color.value)
-        )
+    legend_window.resizable(False, False)
+    room_types = RoomType.get_all()
+    legend_canvas = tk.Canvas(
+        legend_window,
+        width=260,
+        height=len(room_types) * _ROW_HEIGHT + 16,
+        background=palette.window,
+        highlightthickness=0,
+    )
+    legend_canvas.pack(padx=8, pady=8)
+    # Keep references to the room icons, otherwise tkinter discards them
+    legend_canvas.rooms = []  # type: ignore[attr-defined]
+    for index, room_type in enumerate(room_types):
+        room = TkinterRoom(0, 0, index, room_type, width=72, height=_ROW_HEIGHT)
+        legend_canvas.rooms.append(room)  # type: ignore[attr-defined]
+        _draw_at(legend_canvas, room, 8, 8 + index * _ROW_HEIGHT)
         legend_canvas.create_text(
-            40, y_offset + 10, anchor=tk.W, text=room_names[room_type]
+            92,
+            8 + index * _ROW_HEIGHT + _ROW_HEIGHT / 2,
+            anchor=tk.W,
+            text=room_names[room_type],
+            fill=palette.text,
+            font=("DejaVu Sans", 10),
         )
-        y_offset += 30
+
+
+def _draw_at(canvas: tk.Canvas, room: TkinterRoom, x: int, y: int) -> str:
+    """
+    Draws the room on the canvas and moves it to the given position.
+    @return: tag of the drawn items
+    """
+    tag = f"legend-{room.get_id()}"
+    before = set(canvas.find_all())
+    room.draw(canvas)
+    for item in set(canvas.find_all()) - before:
+        canvas.addtag_withtag(tag, item)
+    canvas.move(tag, x, y)
+    return tag

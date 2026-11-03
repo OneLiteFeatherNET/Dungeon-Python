@@ -112,10 +112,7 @@ class TkinterGeneratorTest(unittest.TestCase):
             time.sleep(0.005)
 
     def _drawn_rooms(self) -> int:
-        canvas = self._generator._canvas
-        return len(
-            [item for item in canvas.find_all() if canvas.type(item) == "rectangle"]
-        )
+        return len(self._generator._canvas.find_withtag("room"))
 
     def test_draw_step_by_step_draws_one_room_after_another(self):
         floor = self._generator._floor
@@ -144,6 +141,41 @@ class TkinterGeneratorTest(unittest.TestCase):
         # Only the first room of the new floor is drawn, the next one follows
         # after 500 ms. Rooms of the previous floor must not be drawn anymore.
         self.assertEqual(1, self._drawn_rooms())
+
+    def test_draw_shows_every_door(self):
+        floor = self._generator._floor
+
+        floor.draw()
+
+        doors = sum(len(room.get_doors()) for room in floor.get_rooms())
+        self.assertEqual(doors, len(self._generator._canvas.find_withtag("door")))
+
+    def test_draw_links_teleport_rooms_to_their_target(self):
+        # Seed "2" on floor 2 has a boss room behind a teleport room
+        self._generator.generate("2")
+        floor = self._generator._floor
+
+        floor.draw()
+
+        self.assertEqual(1, len(self._generator._canvas.find_withtag("link")))
+
+    def test_switching_the_theme_redraws_the_floor_in_the_new_colors(self):
+        # pylint: disable=import-outside-toplevel
+        from rooms.tkinter import style
+
+        floor = self._generator._floor
+        floor.draw()
+        canvas = self._generator._canvas
+
+        self._generator._theme_handler.switch_theme()
+
+        self.assertIs(style.DARK, style.get_palette())
+        self.assertEqual(style.DARK.canvas, canvas.cget("background"))
+        start_room = canvas.find_withtag("room")[0]
+        self.assertIn(canvas.itemcget(start_room, "fill"), style.DARK.rooms.values())
+
+        self._generator._theme_handler.switch_theme()
+        self.assertIs(style.LIGHT, style.get_palette())
 
 
 if __name__ == "__main__":

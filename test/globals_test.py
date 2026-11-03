@@ -2,7 +2,6 @@ import os
 import unittest
 from utils import globals, room_type
 from utils.direction import Direction
-from utils.globals import Color
 from utils.room_type import RoomType
 
 
@@ -56,22 +55,6 @@ class GlobalsTest(unittest.TestCase):
         self.assertEqual(
             (RoomType.ITEM_ROOM, RoomType.SHOP_ROOM), room_type.SPECIAL_ROOMS
         )
-
-    def test_door_color(self):
-        self.assertEqual(Color.BLACK, globals.DOOR_COLOR)
-
-    def test_room_colors(self):
-        expected = {
-            RoomType.NORMAL_ROOM: Color.LIGHT_GRAY,
-            RoomType.DEAD_END: Color.LIGHT_GRAY,
-            RoomType.ITEM_ROOM: Color.GREEN,
-            RoomType.SHOP_ROOM: Color.YELLOW,
-            RoomType.START_ROOM: Color.ORANGE,
-            RoomType.TELEPORT_ROOM: Color.VIOLET,
-            RoomType.BOSS_ROOM: Color.RED,
-            RoomType.SECRET_ROOM: Color.BLUE,
-        }
-        self.assertEqual(expected, room_type.room_colors)
 
     def test_room_width(self):
         self.assertEqual(120, globals.ROOM_WIDTH)

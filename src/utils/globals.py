@@ -24,27 +24,6 @@ class DoorFace(Enum):
     WEST = 3
 
 
-class Color(Enum):
-    """
-    Enum for the colors.
-    """
-
-    ORANGE = (255, 140, 0)
-    RED = (255, 0, 0)
-    GREEN = (0, 255, 0)
-    DARK_GREEN = (0, 100, 0)
-    BLACK = (0, 0, 0)
-    WHITE = (255, 255, 255)
-    GRAY = (150, 150, 150)
-    LIGHT_GRAY = (200, 200, 200)
-    DARK_GRAY = (100, 100, 100)
-    YELLOW = (250, 250, 55)
-    VIOLET = (148, 0, 211)
-    BLUE = (0, 0, 255)
-
-
-DOOR_COLOR = Color.BLACK
-
 # Room constants
 MAX_DOOR_AMOUNT: int = 4
 ROOM_WIDTH: int = 120

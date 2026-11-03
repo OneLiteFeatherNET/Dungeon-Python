@@ -8,8 +8,10 @@ from floors.floor import Floor
 from rooms.room import Room
 from rooms.teleport_room import TeleportRoom
 
+from rooms.tkinter import style
 from rooms.tkinter.tkinter_room import TkinterRoom
 from rooms.tkinter.tkinter_teleport_room import TkinterTeleportRoom
+from utils import globals as my_globals
 from utils.room_type import RoomType
 
 
@@ -88,9 +90,78 @@ class TkinterFloor(Floor):
         Draws the floor with all the rooms on the canvas.
         """
         self.stop_drawing()
-        self._canvas.delete("all")
+        self._draw_background()
         for room in self._tkinter_rooms():
             room.draw(self._canvas)
+        self._draw_teleport_links()
+
+    def _draw_background(self) -> None:
+        """
+        Clears the canvas and draws the empty cells of the floor.
+        """
+        palette = style.get_palette()
+        self._canvas.delete("all")
+        self._canvas.configure(background=palette.canvas)
+        for x in range(self._width):
+            for y in range(self._height):
+                x0 = x * my_globals.ROOM_WIDTH + style.ROOM_PADDING_X
+                y0 = y * my_globals.ROOM_HEIGHT + style.ROOM_PADDING_Y
+                self._canvas.create_rectangle(
+                    x0,
+                    y0,
+                    x0 + my_globals.ROOM_WIDTH - 2 * style.ROOM_PADDING_X,
+                    y0 + my_globals.ROOM_HEIGHT - 2 * style.ROOM_PADDING_Y,
+                    outline=palette.grid,
+                    width=1,
+                    tags=("grid",),
+                )
+
+    def _draw_teleport_links(self) -> None:
+        """
+        Draws a dashed line from every teleport room to its connected room.
+        """
+        rooms_by_id = {room.get_id(): room for room in self._rooms}
+        for room in self._rooms:
+            if not isinstance(room, TeleportRoom):
+                continue
+            target = rooms_by_id.get(room.get_connected_room_id())
+            if target is None:
+                continue
+            start = self._cell_center(room)
+            end = self._cell_center(target)
+            self._canvas.create_line(
+                *self._room_edge(start, end),
+                *self._room_edge(end, start),
+                fill=style.get_palette().teleport_link,
+                width=2,
+                dash=(6, 4),
+                arrow="last",
+                arrowshape=(10, 12, 5),
+                tags=("link",),
+            )
+
+    @staticmethod
+    def _room_edge(center, towards):
+        """
+        Returns the point where a line from the center of a room
+        towards another point leaves the room.
+        """
+        delta_x = towards[0] - center[0]
+        delta_y = towards[1] - center[1]
+        half_width = my_globals.ROOM_WIDTH / 2 - style.ROOM_PADDING_X
+        half_height = my_globals.ROOM_HEIGHT / 2 - style.ROOM_PADDING_Y
+        scale = min(
+            half_width / abs(delta_x) if delta_x else float("inf"),
+            half_height / abs(delta_y) if delta_y else float("inf"),
+        )
+        return center[0] + delta_x * scale, center[1] + delta_y * scale
+
+    @staticmethod
+    def _cell_center(room: Room):
+        return (
+            room[0] * my_globals.ROOM_WIDTH + my_globals.ROOM_WIDTH / 2,
+            room[1] * my_globals.ROOM_HEIGHT + my_globals.ROOM_HEIGHT / 2,
+        )
 
     def stop_drawing(self) -> None:
         """
@@ -106,7 +177,7 @@ class TkinterFloor(Floor):
         @param delay_ms: delay between two rooms in milliseconds
         """
         self.stop_drawing()
-        self._canvas.delete("all")
+        self._draw_background()
         sorted_rooms = sorted(self._tkinter_rooms(), key=lambda r: r.get_id())
         self._draw_next_room(sorted_rooms, delay_ms)
 
@@ -118,6 +189,7 @@ class TkinterFloor(Floor):
         """
         self._after_id = None
         if len(rooms) == 0:
+            self._draw_teleport_links()
             return
         rooms[0].draw(self._canvas)
         self._after_id = self._canvas.after(
