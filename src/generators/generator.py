@@ -200,62 +200,70 @@ class Generator:
 
     def add_boss_room(self, dead_end_indices: list, start_room: tuple) -> None:
         """
-        Marks a room as the boss room depending on the location of the start room.
+        Turns one of the dead ends farthest away from the start room into the boss room.
+        A dead end with free space next to it is preferred, otherwise the boss room
+        is moved away and connected to the floor with a teleport room.
         @param dead_end_indices: indices for all dead ends
         @param start_room: coordinates of the start room in a tuple
         """
         if len(dead_end_indices) == 0:
             return
         floor = self._floor
-        boss_room: Room
-        possible_locations: list = []
-        boss_room_placed = False
-        boss_room = floor.get_rooms()[dead_end_indices[0]]
-        boss_room_index = dead_end_indices[0]
-        max_distance = 0
-        max_distance_index = 0
-        for index in dead_end_indices:
-            dead_end = floor.get_rooms()[index]
-            current_distance = util_functions.calculate_distance(start_room, dead_end)
-            if max_distance < current_distance:
-                max_distance = current_distance
-                max_distance_index = index
-
-            boss_room = floor.get_rooms()[max_distance_index]
-            boss_room_index = max_distance_index
-
-        boss_room_x = boss_room[0]
-        boss_room_y = boss_room[1]
-        for direction in Direction.main_directions():
-            new_boss_tuple = util_functions.add_direction_to_coordinates(
-                direction, (boss_room_x, boss_room_y)
-            )
-            if (
-                self._floor.is_within_border(new_boss_tuple)
-                and floor.count_neighbours(new_boss_tuple[0], new_boss_tuple[1]) == 1
-                and not self._floor.contains_room(new_boss_tuple)
-            ):
-                possible_locations.append(direction)
+        rooms = floor.get_rooms()
+        farthest_first = sorted(
+            dead_end_indices,
+            key=lambda index: -util_functions.calculate_distance(
+                start_room, rooms[index]
+            ),
+        )
+        candidates = farthest_first[: my_globals.BOSS_ROOM_CANDIDATES]
+        boss_room_index = next(
+            (index for index in candidates if self._free_boss_locations(rooms[index])),
+            farthest_first[0],
+        )
+        boss_room = rooms[boss_room_index]
+        possible_locations = self._free_boss_locations(boss_room)
 
         if len(possible_locations) == 0:
             # Place a teleport-room to the boss-room
             self._place_boss_with_teleport_room(boss_room)
-            boss_room_placed = True
-
-        elif len(possible_locations) >= 2 and self._random.randint(0, 10) < 5:
-            # Create a 2 * 2 boss-room
-            boss_room_placed = self._place_big_boss_room(possible_locations, boss_room)
-
-        if (
-            not boss_room_placed
-            and len(possible_locations) >= 1
-            and self._random.randint(0, 10) < 5
-        ):
-            # Create a 1 * 2 boss-room
-            floor.add_room_next_to(boss_room, possible_locations[0], RoomType.BOSS_ROOM)
+        else:
+            size_roll = self._random.random()
+            placed = (
+                len(possible_locations) >= 2
+                and size_roll < my_globals.BIG_BOSS_ROOM_CHANCE
+                and self._place_big_boss_room(possible_locations, boss_room)
+            )
+            if not placed and size_roll < (
+                my_globals.BIG_BOSS_ROOM_CHANCE + my_globals.LONG_BOSS_ROOM_CHANCE
+            ):
+                # Create a 1 * 2 boss-room
+                floor.add_room_next_to(
+                    boss_room, possible_locations[0], RoomType.BOSS_ROOM
+                )
 
         boss_room.set_type(RoomType.BOSS_ROOM)
         dead_end_indices.remove(boss_room_index)
+
+    def _free_boss_locations(self, room: Room) -> List[Direction]:
+        """
+        Returns the directions in which the boss room could be extended.
+        @param room: possible boss room
+        @return: directions with a free cell that is only next to the room
+        """
+        floor = self._floor
+        locations = []
+        for direction in Direction.main_directions():
+            cell = util_functions.add_direction_to_coordinates(
+                direction, (room[0], room[1])
+            )
+            if (
+                floor.is_within_border(cell)
+                and not floor.contains_room(cell)
+                and floor.count_neighbours(cell[0], cell[1]) == 1
+            ):
+                locations.append(direction)
+        return locations
 
     def _place_big_boss_room(self, possible_locations: List, boss_room: Room) -> bool:
         """
