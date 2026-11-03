@@ -2,8 +2,8 @@
 Module to handle the theme of the application.
 """
 
-from typing import Callable, Optional
-from tkinter import Tk, Canvas, ttk
+from typing import Callable, List, Optional
+from tkinter import BooleanVar, Menu, Tk, Canvas, ttk
 
 from rooms.tkinter import style
 
@@ -26,16 +26,47 @@ class ThemeHandler:
         self._canvas = canvas
         self._on_change = on_change
         self._palette = style.LIGHT
+        self._menus: List[Menu] = []
+        # Shown as check mark in the view menu
+        self.dark = BooleanVar(tk, value=False)
         self.apply_theme()
 
     def switch_theme(self) -> None:
         """
         Switches the theme of the application.
         """
-        self._palette = style.DARK if self._palette is style.LIGHT else style.LIGHT
+        self.set_dark(self._palette is style.LIGHT)
+
+    def set_dark(self, dark: bool) -> None:
+        """
+        Switches to the dark or the light theme.
+        @param dark: True for the dark theme, False for the light theme
+        """
+        self._palette = style.DARK if dark else style.LIGHT
+        self.dark.set(dark)
         self.apply_theme()
         if self._on_change is not None:
             self._on_change()
+
+    def register_menu(self, menu: Menu) -> None:
+        """
+        Colors the menu in the current theme and whenever the theme changes.
+        @param menu: menu to color
+        """
+        self._menus.append(menu)
+        self._apply_to_menu(menu)
+
+    def _apply_to_menu(self, menu: Menu) -> None:
+        palette = self._palette
+        menu.configure(
+            background=palette.panel,
+            foreground=palette.text,
+            activebackground=palette.button_active,
+            activeforeground=palette.text,
+            selectcolor=palette.text,
+            borderwidth=0,
+            relief="flat",
+        )
 
     def apply_theme(self) -> None:
         """
@@ -44,6 +75,8 @@ class ThemeHandler:
         palette = self._palette
         style.set_palette(palette)
         self._tk.configure(background=palette.window)
+        for menu in self._menus:
+            self._apply_to_menu(menu)
         self._canvas.configure(
             background=palette.canvas, highlightthickness=0, borderwidth=0
         )
