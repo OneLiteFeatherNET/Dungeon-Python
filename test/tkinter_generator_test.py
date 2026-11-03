@@ -231,6 +231,53 @@ class TkinterGeneratorTest(unittest.TestCase):
         self._press("<Control-t>")
         self.assertFalse(generator._theme_handler.dark.get())
 
+    def _type_in_seed_field(self, key: str) -> None:
+        tk = self._generator._tk
+        entry = self._generator._next_seed_entry
+        tk.update()
+        entry.focus_force()
+        tk.update()
+        entry.event_generate(key, when="now")
+        tk.update()
+
+    def test_space_in_the_seed_field_does_not_generate_a_floor(self):
+        generator = self._generator
+        generator.add_buttons()
+        generator._floor_manager.next_seed.set("my")
+        generator._next_seed_entry.icursor("end")
+
+        with mock.patch.object(generator, "_generate_and_draw_floor") as generate:
+            self._type_in_seed_field("<space>")
+
+        generate.assert_not_called()
+
+    def test_arrow_keys_in_the_seed_field_do_not_switch_the_floor(self):
+        generator = self._generator
+        generator.add_buttons()
+        generator.generate("2")
+        current = generator._floor
+
+        self._type_in_seed_field("<Left>")
+        self._type_in_seed_field("<Right>")
+
+        self.assertIs(current, generator._floor)
+
+    def test_shortcuts_work_again_after_leaving_the_seed_field(self):
+        generator = self._generator
+        generator.add_buttons()
+        for key in ("<Escape>", "<Return>"):
+            with self.subTest(key=key), mock.patch(
+                "floors.tkinter_floor.TkinterFloor.draw_step_by_step"
+            ):
+                self._type_in_seed_field(key)
+                self.assertIs(generator._tk, generator._tk.focus_get())
+
+                with mock.patch.object(
+                    generator, "_generate_and_draw_floor"
+                ) as generate:
+                    self._press("<space>")
+                generate.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()

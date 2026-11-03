@@ -5,7 +5,7 @@ Module for the TkinterGenerator class.
 import os
 import secrets
 import tkinter as tk
-from typing import Optional
+from typing import Callable, Optional
 from tkinter import filedialog, messagebox
 from tkinter import ttk
 
@@ -263,19 +263,21 @@ class TkinterGenerator(Generator):
         )
         button_pre.pack(side=tk.LEFT)
         # Left arrow to decrease
-        self._tk.bind("<Left>", lambda event: self._decrease_floor())
+        self._tk.bind("<Left>", self._shortcut(lambda: self._decrease_floor()))
         button_gen = ttk.Button(
             button_frame, text="Generate", command=self._generate_and_draw_floor
         )
         button_gen.pack(side=tk.LEFT, padx=6)
         # Space to generate
-        self._tk.bind("<space>", lambda event: self._generate_and_draw_floor())
+        self._tk.bind(
+            "<space>", self._shortcut(lambda: self._generate_and_draw_floor())
+        )
         button_next = ttk.Button(
             button_frame, text="▶", width=3, command=self._increase_floor
         )
         button_next.pack(side=tk.LEFT)
         # Right arrow to increase
-        self._tk.bind("<Right>", lambda event: self._increase_floor())
+        self._tk.bind("<Right>", self._shortcut(lambda: self._increase_floor()))
         # Next seed entry
         next_seed_label = ttk.Label(
             button_frame, text="Next seed", style="Muted.TLabel"
@@ -284,11 +286,36 @@ class TkinterGenerator(Generator):
         self._next_seed_entry = ttk.Entry(
             button_frame, textvariable=self._floor_manager.next_seed, width=34
         )
-        # Enter generates a floor with the entered seed
-        self._next_seed_entry.bind(
-            "<Return>", lambda event: self._generate_and_draw_floor()
-        )
+        # Enter generates a floor with the entered seed, Escape leaves the field.
+        # Both give the focus back so that the shortcuts work again.
+        self._next_seed_entry.bind("<Return>", lambda event: self._submit_seed())
+        self._next_seed_entry.bind("<Escape>", lambda event: self._tk.focus_set())
+        self._canvas.bind("<Button-1>", lambda event: self._tk.focus_set())
         self._next_seed_entry.pack(side=tk.LEFT)
+
+    def _submit_seed(self) -> None:
+        """
+        Generates a floor with the entered seed and leaves the seed field.
+        """
+        self._tk.focus_set()
+        self._generate_and_draw_floor()
+
+    @staticmethod
+    def _shortcut(action: Callable[[], None]) -> Callable[[tk.Event], None]:
+        """
+        Creates a handler for a single key shortcut that is ignored while an
+        entry or a button has the focus, so typing a seed or pressing a button
+        with the keyboard does not trigger it.
+        @param action: action of the shortcut
+        @return: event handler
+        """
+
+        def handler(event: tk.Event) -> None:
+            if isinstance(event.widget, (tk.Entry, ttk.Entry, tk.Button, ttk.Button)):
+                return
+            action()
+
+        return handler
 
     def create_menu_bar(self) -> None:
         """
