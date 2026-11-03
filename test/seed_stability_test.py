@@ -30,8 +30,12 @@ def _floor_hash(seed: str, floor_id: int) -> str:
 
     generator = Generator(seed, "floor", stage_id=floor_id)
     generator.generate()
+    # Only the floor itself is pinned, so new metadata does not change the hashes
     canonical = json.dumps(
-        generator.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        generator.to_dict()["_floor"],
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
     )
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
