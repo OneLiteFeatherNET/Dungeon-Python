@@ -1,6 +1,5 @@
 """Unit tests for the TkinterFloor class."""
 
-import importlib.util
 import unittest
 
 import numpy
@@ -8,11 +7,10 @@ import numpy
 from floors.floor import Floor
 from generators.generator import Generator
 from rooms.teleport_room import TeleportRoom
+from ui_test_support import requires_tkinter
 
-_HAS_TKINTER = importlib.util.find_spec("tkinter") is not None
 
-
-@unittest.skipUnless(_HAS_TKINTER, "tkinter is not available")
+@requires_tkinter()
 class TkinterFloorTest(unittest.TestCase):
     def setUp(self) -> None:
         # pylint: disable=import-outside-toplevel
