@@ -19,6 +19,13 @@ from utils.direction import Direction
 from rooms.room import Room
 from rooms.teleport_room import TeleportRoom
 
+_DOOR_DIRECTIONS = {
+    DoorFace.TOP: Direction.UP,
+    DoorFace.EAST: Direction.RIGHT,
+    DoorFace.BOTTOM: Direction.DOWN,
+    DoorFace.WEST: Direction.LEFT,
+}
+
 
 class Floor:
     """
@@ -284,6 +291,64 @@ class Floor:
                 if room is not None and room.get_type().is_special():
                     return True
         return False
+
+    def rooms_by_distance(self) -> List[List[Room]]:
+        """
+        Groups the rooms by how many doors away from the start room they are,
+        following teleport rooms to their target.
+        All cells of a big boss room are in the same group
+        and secret rooms are hidden, so they come last.
+        @return: rings of rooms, starting with the start room
+        """
+        hidden_types = (RoomType.SECRET_ROOM, RoomType.SUPER_SECRET_ROOM)
+        rooms_by_id = {room.get_id(): room for room in self._rooms}
+        start = [r for r in self._rooms if r.get_type() == RoomType.START_ROOM]
+        seen = {room.get_id() for room in start}
+        rings: List[List[Room]] = [start] if start else []
+        while rings and rings[-1]:
+            next_ring: List[Room] = []
+            for room in rings[-1]:
+                for neighbour in self._connected_rooms(room, rooms_by_id):
+                    if (
+                        neighbour.get_id() not in seen
+                        and neighbour.get_type() not in hidden_types
+                    ):
+                        seen.add(neighbour.get_id())
+                        next_ring.append(neighbour)
+                        if neighbour.get_type() == RoomType.BOSS_ROOM:
+                            # All cells of a big boss room appear together
+                            for boss_cell in self._rooms:
+                                if (
+                                    boss_cell.get_type() == RoomType.BOSS_ROOM
+                                    and boss_cell.get_id() not in seen
+                                ):
+                                    seen.add(boss_cell.get_id())
+                                    next_ring.append(boss_cell)
+            rings.append(sorted(next_ring, key=lambda r: r.get_id()))
+        rings = [ring for ring in rings if ring]
+        remaining = [room for room in self._rooms if room.get_id() not in seen]
+        if remaining:
+            rings.append(sorted(remaining, key=lambda r: r.get_id()))
+        return rings
+
+    def _connected_rooms(self, room: Room, rooms_by_id: dict) -> List[Room]:
+        """
+        Returns the rooms behind the doors of a room and the target of a teleport.
+        """
+        connected = []
+        for door in room.get_doors():
+            neighbour = self.get_room(
+                utils.util_functions.add_direction_to_coordinates(
+                    _DOOR_DIRECTIONS[door], (room[0], room[1])
+                )
+            )
+            if neighbour is not None:
+                connected.append(neighbour)
+        if isinstance(room, TeleportRoom):
+            target = rooms_by_id.get(room.get_connected_room_id())
+            if target is not None:
+                connected.append(target)
+        return connected
 
     def get_boss_room(self) -> Optional[Room]:
         """

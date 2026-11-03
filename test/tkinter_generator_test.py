@@ -101,12 +101,21 @@ class TkinterGeneratorTest(unittest.TestCase):
     def _drawn_rooms(self) -> int:
         return len(self._generator._canvas.find_withtag("room"))
 
-    def test_draw_step_by_step_draws_one_room_after_another(self):
+    def test_draw_step_by_step_starts_with_the_start_room(self):
         floor = self._generator._floor
 
         floor.draw_step_by_step(delay_ms=10)
 
         self.assertEqual(1, self._drawn_rooms())
+        start = next(
+            r for r in floor.get_rooms() if r.get_type() == RoomType.START_ROOM
+        )
+        start_x = start[0] * my_globals.ROOM_WIDTH + my_globals.ROOM_WIDTH / 2
+        start_y = start[1] * my_globals.ROOM_HEIGHT + my_globals.ROOM_HEIGHT / 2
+        canvas = self._generator._canvas
+        drawn = canvas.find_withtag("room")[0]
+        x0, y0, x1, y1 = canvas.bbox(drawn)
+        self.assertTrue(x0 < start_x < x1 and y0 < start_y < y1)
         self._pump(10 * len(floor.get_rooms()) + 300)
         self.assertEqual(len(floor.get_rooms()), self._drawn_rooms())
 

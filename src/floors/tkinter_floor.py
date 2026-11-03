@@ -174,25 +174,27 @@ class TkinterFloor(Floor):
 
     def draw_step_by_step(self, delay_ms: int = 500) -> None:
         """
-        Draws the floor room by room using the tkinter event loop.
-        @param delay_ms: delay between two rooms in milliseconds
+        Draws the floor step by step using the tkinter event loop,
+        starting with the start room and spreading through the doors.
+        @param delay_ms: delay between two steps in milliseconds
         """
         self.stop_drawing()
         self._draw_background()
-        sorted_rooms = sorted(self._tkinter_rooms(), key=lambda r: r.get_id())
-        self._draw_next_room(sorted_rooms, delay_ms)
+        rings = cast(List[List[TkinterRoom]], self.rooms_by_distance())
+        self._draw_next_ring(rings, delay_ms)
 
-    def _draw_next_room(self, rooms: List[TkinterRoom], delay_ms: int) -> None:
+    def _draw_next_ring(self, rings: List[List[TkinterRoom]], delay_ms: int) -> None:
         """
-        Draws the first of the given rooms and schedules the remaining rooms.
-        @param rooms: rooms that still have to be drawn
-        @param delay_ms: delay between two rooms in milliseconds
+        Draws the first of the given rings of rooms and schedules the remaining rings.
+        @param rings: rings of rooms that still have to be drawn
+        @param delay_ms: delay between two rings in milliseconds
         """
         self._after_id = None
-        if len(rooms) == 0:
+        if len(rings) == 0:
             self._draw_teleport_links()
             return
-        rooms[0].draw(self._canvas)
+        for room in rings[0]:
+            room.draw(self._canvas)
         self._after_id = self._canvas.after(
-            delay_ms, self._draw_next_room, rooms[1:], delay_ms
+            delay_ms, self._draw_next_ring, rings[1:], delay_ms
         )
