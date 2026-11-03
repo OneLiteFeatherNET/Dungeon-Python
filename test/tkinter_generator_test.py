@@ -1,30 +1,15 @@
 """Unit tests for the TkinterGenerator class."""
 
-import importlib.util
 import tempfile
 import time
 import unittest
 from unittest import mock
 
+from ui_test_support import requires_display
 from utils import globals as my_globals
 
-_HAS_TKINTER = importlib.util.find_spec("tkinter") is not None
 
-
-def _has_display() -> bool:
-    if not _HAS_TKINTER:
-        return False
-    # pylint: disable=import-outside-toplevel
-    import tkinter
-
-    try:
-        tkinter.Tk().destroy()
-    except tkinter.TclError:
-        return False
-    return True
-
-
-@unittest.skipUnless(_has_display(), "tkinter or a display is not available")
+@requires_display()
 class TkinterGeneratorTest(unittest.TestCase):
     def setUp(self) -> None:
         # pylint: disable=import-outside-toplevel

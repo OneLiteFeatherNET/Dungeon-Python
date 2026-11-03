@@ -1,14 +1,12 @@
 """Unit tests for the TkinterTeleportRoom class."""
 
-import importlib.util
 import unittest
 
+from ui_test_support import requires_tkinter
 from utils.room_type import RoomType
 
-_HAS_TKINTER = importlib.util.find_spec("tkinter") is not None
 
-
-@unittest.skipUnless(_HAS_TKINTER, "tkinter is not available")
+@requires_tkinter()
 class TkinterTeleportRoomTest(unittest.TestCase):
     def setUp(self) -> None:
         # pylint: disable=import-outside-toplevel

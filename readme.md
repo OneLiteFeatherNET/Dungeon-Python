@@ -168,5 +168,6 @@ pip install -r requirements-dev.txt
 | Type checks | `mypy` |
 
 The UI tests are skipped when no display is available. On Linux they can be run with `xvfb-run -a pytest`.
+CI sets `REQUIRE_UI_TESTS=1`, which makes them fail instead of being skipped.
 
 Pull requests target the `dev` branch.
