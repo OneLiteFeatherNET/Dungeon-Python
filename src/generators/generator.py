@@ -10,7 +10,7 @@ import os
 import random
 from collections import deque
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from floors.floor import Floor
 from rooms.room import Room
@@ -133,28 +133,37 @@ class Generator:
             self._seed = new_seed
         for attempt in range(my_globals.MAX_GENERATION_ATTEMPTS):
             last_attempt = attempt == my_globals.MAX_GENERATION_ATTEMPTS - 1
-            start_room, complete = self._place_rooms()
-            dead_ends = self.mark_dead_ends()
+            start_room, complete, end_cells = self._place_rooms()
+            dead_ends = self._order_like(self.mark_dead_ends(), end_cells)
+            rooms = self._floor.get_rooms()
             usable = [
                 index
                 for index in dead_ends
-                if not self._is_next_to(self._floor.get_rooms()[index], start_room)
+                if not self._is_next_to(rooms[index], start_room)
             ]
+            boss_next_to_start = len(dead_ends) > 0 and self._is_next_to(
+                rooms[dead_ends[-1]], start_room
+            )
             if last_attempt or (
-                complete and len(usable) >= my_globals.REQUIRED_DEAD_ENDS
+                complete
+                and len(usable) >= my_globals.REQUIRED_DEAD_ENDS
+                and not boss_next_to_start
             ):
                 break
-        self.add_boss_room(dead_ends, start_room)
+        self.add_boss_room(dead_ends)
         self.add_special_rooms(dead_ends)
         self.place_secret_room()
         self.place_super_secret_room()
         self._floor.add_doors_to_rooms()
 
-    def _place_rooms(self) -> Tuple[Tuple[int, int], bool]:
+    def _place_rooms(
+        self,
+    ) -> Tuple[Tuple[int, int], bool, List[Tuple[int, int]]]:
         """
         Creates a new floor and places the start room and the normal rooms.
-        @return: position of the start room and
+        @return: position of the start room,
             if the room amount for the floor has been reached
+            and the dead ends in the order they were found
         """
         self._create_floor()
         floor = self._floor
@@ -168,10 +177,12 @@ class Generator:
         number_of_current_rooms = 1
         room_tuple_queue: deque = deque([start_room])  # Room coordinates
         room_tuple_list = []
+        end_cells: List[Tuple[int, int]] = []
         reseeds = 0
         while number_of_current_rooms < number_of_rooms and len(room_tuple_queue) > 0:
             # A queue makes the floor grow evenly in all directions (breadth first)
             room_tuple = room_tuple_queue.popleft()
+            added_rooms = 0
             for direction in Direction.main_directions():
                 if number_of_current_rooms >= number_of_rooms:
                     break
@@ -180,8 +191,12 @@ class Generator:
                 )
                 if self._add_new_room(new_room_tuple, room_tuple_queue):
                     number_of_current_rooms += 1
+                    added_rooms += 1
             if room_tuple != start_room:
                 room_tuple_list.append(room_tuple)
+                if added_rooms == 0:
+                    # A room that does not add a neighbour is a dead end
+                    end_cells.append(room_tuple)
             if (
                 len(room_tuple_queue) == 0
                 and number_of_current_rooms < number_of_rooms
@@ -192,13 +207,57 @@ class Generator:
                 room_tuple_queue.append(start_room)
                 reseeds += 1
 
-        room_tuple_list.extend(
-            room_tuple for room_tuple in room_tuple_queue if room_tuple != start_room
-        )
+        # Rooms that are still queued did not add neighbours either
+        remaining = [cell for cell in room_tuple_queue if cell != start_room]
+        room_tuple_list.extend(remaining)
+        end_cells.extend(remaining)
         while len(room_tuple_list) > 0:
             room_tuple = room_tuple_list.pop()
             floor.add_room(room_tuple[0], room_tuple[1])
-        return start_room, number_of_current_rooms >= number_of_rooms
+        return start_room, number_of_current_rooms >= number_of_rooms, end_cells
+
+    def _order_like(
+        self, dead_ends: List[int], end_cells: List[Tuple[int, int]]
+    ) -> List[int]:
+        """
+        Sorts the indices of the dead ends by their number of steps from the start
+        room and then by the order their cells were found, like the end room list
+        of "The Binding of Isaac". Sorting by steps keeps the farthest dead end last
+        even when big floors grew again from the start.
+        @param dead_ends: indices of the dead ends
+        @param end_cells: cells of the dead ends in the order they were found
+        @return: sorted indices, the last one is the farthest from the start
+        """
+        rooms = self._floor.get_rooms()
+        order = {cell: position for position, cell in enumerate(end_cells)}
+        steps = self._steps_from(my_globals.START_ROOM_POSITION)
+
+        def key(index: int) -> Tuple[int, int]:
+            cell = (rooms[index][0], rooms[index][1])
+            return steps.get(cell, 0), order.get(cell, -1)
+
+        return sorted(dead_ends, key=key)
+
+    def _steps_from(self, start: Tuple[int, int]) -> Dict[Tuple[int, int], int]:
+        """
+        Counts the steps from the start to every room of the floor grid.
+        @param start: cell to start from
+        @return: number of steps for every reachable cell
+        """
+        steps = {start: 0}
+        queue = deque([start])
+        while queue:
+            cell = queue.popleft()
+            for direction in Direction.main_directions():
+                neighbour = util_functions.add_direction_to_coordinates(direction, cell)
+                if (
+                    neighbour not in steps
+                    and self._floor.is_within_border(neighbour)
+                    and self._floor.contains_room(neighbour)
+                ):
+                    steps[neighbour] = steps[cell] + 1
+                    queue.append(neighbour)
+        return steps
 
     @staticmethod
     def _is_next_to(room: Room, position: Tuple[int, int]) -> bool:
@@ -234,24 +293,19 @@ class Generator:
         for direction in directions:
             floor.add_room_next_to(room, direction, RoomType.BOSS_ROOM)
 
-    def add_boss_room(self, dead_end_indices: list, start_room: tuple) -> None:
+    def add_boss_room(self, dead_end_indices: list) -> None:
         """
-        Turns one of the dead ends farthest away from the start room into the boss room.
-        A dead end with free space next to it is preferred, otherwise the boss room
-        is moved away and connected to the floor with a teleport room.
-        @param dead_end_indices: indices for all dead ends
-        @param start_room: coordinates of the start room in a tuple
+        Turns the last found dead end into the boss room. Because the floor grows
+        breadth first, it is one of the rooms farthest away from the start room.
+        If it has no free space next to it, the dead end found before it is tried,
+        otherwise the boss room is moved away and connected with a teleport room.
+        @param dead_end_indices: indices of all dead ends in the order they were found
         """
         if len(dead_end_indices) == 0:
             return
         floor = self._floor
         rooms = floor.get_rooms()
-        farthest_first = sorted(
-            dead_end_indices,
-            key=lambda index: -util_functions.calculate_distance(
-                start_room, rooms[index]
-            ),
-        )
+        farthest_first = list(reversed(dead_end_indices))
         candidates = farthest_first[: my_globals.BOSS_ROOM_CANDIDATES]
         boss_room_index = next(
             (index for index in candidates if self._free_boss_locations(rooms[index])),

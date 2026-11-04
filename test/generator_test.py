@@ -396,6 +396,47 @@ class GeneratorTest(unittest.TestCase):
                 )
                 self.assertEqual((4, 3), (start[0], start[1]))
 
+    def test_boss_room_is_one_of_the_farthest_dead_ends(self):
+        for stage_id in (0, 2, 5):
+            for seed in range(100):
+                with self.subTest(stage_id=stage_id, seed=seed):
+                    generator = Generator(str(seed), "test", "", stage_id)
+                    generator.generate()
+                    floor = generator._floor
+                    rooms = floor.get_rooms()
+                    if any(isinstance(room, TeleportRoom) for room in rooms):
+                        continue
+                    steps = {
+                        room.get_id(): ring
+                        for ring, rooms_in_ring in enumerate(floor.rooms_by_distance())
+                        for room in rooms_in_ring
+                    }
+                    boss = min(
+                        steps[room.get_id()]
+                        for room in rooms
+                        if room.get_type() == RoomType.BOSS_ROOM
+                    )
+                    farther_dead_ends = [
+                        room
+                        for room in rooms
+                        if room.get_type()
+                        in (RoomType.DEAD_END, RoomType.ITEM_ROOM, RoomType.SHOP_ROOM)
+                        and steps[room.get_id()] > boss
+                    ]
+                    # The farthest or, without space for the boss, the second farthest
+                    self.assertLessEqual(len(farther_dead_ends), 1)
+
+    def test_boss_room_is_never_next_to_the_start(self):
+        for stage_id in (0, 1, 2):
+            for seed in range(100):
+                with self.subTest(stage_id=stage_id, seed=seed):
+                    generator = Generator(str(seed), "test", "", stage_id)
+                    generator.generate()
+                    for room in generator._floor.get_rooms():
+                        if room.get_type() == RoomType.BOSS_ROOM:
+                            distance = abs(room[0] - 4) + abs(room[1] - 3)
+                            self.assertGreater(distance, 1)
+
     def test_save_writes_the_generated_floor_to_the_given_path(self):
         self._generator.generate()
         with tempfile.TemporaryDirectory() as tmp_dir:
