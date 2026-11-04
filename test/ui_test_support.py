@@ -5,7 +5,6 @@ Set the environment variable REQUIRE_UI_TESTS=1 to make these tests fail
 instead of being skipped, e.g. in CI where they must always run.
 """
 
-import importlib.util
 import os
 import unittest
 from typing import Callable, TypeVar
@@ -18,8 +17,15 @@ _REQUIRED = os.environ.get("REQUIRE_UI_TESTS") == "1"
 def has_tkinter() -> bool:
     """
     Returns if tkinter can be imported.
+    The module can exist while the Tk library of the system is missing,
+    so it is really imported instead of only searched.
     """
-    return importlib.util.find_spec("tkinter") is not None
+    try:
+        # pylint: disable=import-outside-toplevel,unused-import
+        import tkinter  # noqa: F401
+    except ImportError:
+        return False
+    return True
 
 
 def has_display() -> bool:
