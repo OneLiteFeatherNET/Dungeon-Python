@@ -18,6 +18,15 @@ from utils import util_functions, globals as my_globals, room_type
 from utils.direction import Direction
 from utils.room_type import RoomType
 
+# Rooms that were dead ends of the floor plan, the teleport room replaces a boss room
+_END_ROOM_TYPES = (
+    RoomType.DEAD_END,
+    RoomType.ITEM_ROOM,
+    RoomType.SHOP_ROOM,
+    RoomType.BOSS_ROOM,
+    RoomType.TELEPORT_ROOM,
+)
+
 
 class Generator:
     """
@@ -483,44 +492,54 @@ class Generator:
 
     def place_secret_room(self) -> None:
         """
-        Places a secret room on the floor.
-        If no valid position exists, no secret room is placed.
+        Places the secret room like "The Binding of Isaac": it randomly searches
+        for an empty cell next to at least three rooms and not next to an end room.
+        After some attempts the criteria are loosened, so a secret room is always
+        placed if there is any empty cell next to a room that is not the boss room.
         """
         floor = self._floor
-        neighbour_rooms = 3
-        while neighbour_rooms > 0:
-            for room in reversed(floor.get_rooms()):
-                # Check all neighbours of the room
-                if self._check_directions_for_secret_room(room, neighbour_rooms):
+        for min_neighbours, avoid_end_rooms in my_globals.SECRET_ROOM_SEARCH:
+            for _ in range(my_globals.SECRET_ROOM_ATTEMPTS):
+                cell = (
+                    self._random.randint(0, my_globals.FLOOR_WIDTH - 1),
+                    self._random.randint(0, my_globals.FLOOR_HEIGHT - 1),
+                )
+                if self._fits_secret_room(cell, min_neighbours, avoid_end_rooms):
+                    floor.add_room(cell[0], cell[1], RoomType.SECRET_ROOM)
                     return
-            neighbour_rooms -= 1
+        candidates = [
+            (x, y)
+            for y in range(my_globals.FLOOR_HEIGHT)
+            for x in range(my_globals.FLOOR_WIDTH)
+            if self._fits_secret_room((x, y), 1, False)
+        ]
+        if candidates:
+            cell = self._random.choice(candidates)
+            floor.add_room(cell[0], cell[1], RoomType.SECRET_ROOM)
 
-    def _check_directions_for_secret_room(
-        self, room: Room, neighbour_rooms: int
+    def _fits_secret_room(
+        self, cell: Tuple[int, int], min_neighbours: int, avoid_end_rooms: bool
     ) -> bool:
         """
-        Checks if a secret room can be placed next to a given room.
-        @param room: room to check
-        @param neighbour_rooms: number of minimum neighbours
-        @return: True if a secret room was placed otherwise False
+        Checks if the secret room can be placed in the cell.
+        @param cell: cell to check
+        @param min_neighbours: number of rooms the cell has to be next to
+        @param avoid_end_rooms: True if the cell must not be next to an end room
+        @return: True if the secret room fits
         """
         floor = self._floor
-        for direction in Direction.main_directions():
-            neighbour = util_functions.add_direction_to_coordinates(
-                direction, (room[0], room[1])
-            )
-            if not floor.is_within_border(neighbour) or floor.contains_room(neighbour):
-                continue
-            if floor.has_special_room_as_neighbour(neighbour):
-                continue
-            current_neighbour = floor.count_neighbours(neighbour[0], neighbour[1])
-            if (
-                current_neighbour >= neighbour_rooms
-                and not floor.has_boss_room_as_neighbour(neighbour)
-            ):
-                floor.add_room(neighbour[0], neighbour[1], RoomType.SECRET_ROOM)
-                return True
-        return False
+        if floor.contains_room(cell) or floor.has_boss_room_as_neighbour(cell):
+            return False
+        if floor.count_neighbours(cell[0], cell[1]) < min_neighbours:
+            return False
+        if avoid_end_rooms:
+            for direction in Direction.main_directions():
+                neighbour = floor.get_room(
+                    util_functions.add_direction_to_coordinates(direction, cell)
+                )
+                if neighbour is not None and neighbour.get_type() in _END_ROOM_TYPES:
+                    return False
+        return True
 
     def save(self, path: str = "") -> str:
         """

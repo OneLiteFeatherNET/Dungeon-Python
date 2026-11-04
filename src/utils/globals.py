@@ -49,6 +49,10 @@ START_ROOM_POSITION = (4, 3)
 # when they run out of rooms to expand, at most this many times
 START_ROOM_RESEED_MIN_ROOMS: int = 16
 MAX_START_ROOM_RESEEDS: int = 10
+# Search steps for the secret room: minimum neighbours and if end rooms are avoided.
+# Each step tries random cells, afterwards any cell next to a room is used.
+SECRET_ROOM_SEARCH = ((3, True), (2, True))
+SECRET_ROOM_ATTEMPTS: int = 300
 # A floor is generated again if it has less dead ends than the boss, item and shop room need
 REQUIRED_DEAD_ENDS: int = 3
 # Upper limit for generating a floor again, the last attempt is always kept

@@ -437,6 +437,35 @@ class GeneratorTest(unittest.TestCase):
                             distance = abs(room[0] - 4) + abs(room[1] - 3)
                             self.assertGreater(distance, 1)
 
+    def test_every_floor_has_a_secret_room_not_next_to_the_boss(self):
+        for stage_id in (0, 2, 5):
+            for seed in range(100):
+                with self.subTest(stage_id=stage_id, seed=seed):
+                    generator = Generator(str(seed), "test", "", stage_id)
+                    generator.generate()
+                    floor = generator._floor
+                    secret = [
+                        room
+                        for room in floor.get_rooms()
+                        if room.get_type() == RoomType.SECRET_ROOM
+                    ]
+                    self.assertEqual(1, len(secret))
+                    position = (secret[0][0], secret[0][1])
+                    self.assertFalse(floor.has_boss_room_as_neighbour(position))
+
+    def test_secret_room_avoids_cells_next_to_end_rooms(self):
+        generator = self._generator
+        generator._create_floor()
+        floor = generator._floor
+        floor.add_room(1, 1)
+        floor.add_room(3, 1)
+        floor.add_room(2, 0, RoomType.DEAD_END)
+        floor.add_room(2, 2)
+
+        # (2, 1) is next to three rooms, but one of them is a dead end
+        self.assertFalse(generator._fits_secret_room((2, 1), 3, True))
+        self.assertTrue(generator._fits_secret_room((2, 1), 3, False))
+
     def test_save_writes_the_generated_floor_to_the_given_path(self):
         self._generator.generate()
         with tempfile.TemporaryDirectory() as tmp_dir:
