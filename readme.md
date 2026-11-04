@@ -35,7 +35,7 @@ python src/main.py -s my-seed -f 3 -o my-floor
 | Option | Description | Default |
 |---|---|---|
 | `-s`, `--seed` | Seed for the random number generator | random seed |
-| `-f`, `--floor` | Floor id, must be 0 or greater. Higher floor ids get more rooms (8 to 9 on floor 0, up to 20) | `2` |
+| `-f`, `--floor` | Floor id, must be 0 or greater. Higher floor ids get more rooms (7 to 8 on floor 0, up to 20) | `2` |
 | `-o`, `--output` | Name of the output file | `floor` |
 | `-u`, `--ui` | Opens the UI instead of writing a file | disabled |
 | `-h`, `--help` | Shows the help | |
@@ -95,6 +95,31 @@ docker run -p 8000:8000 dungeon-python
 
 All endpoints return the floor as `application/json` with the file name `floor.json`.
 A negative floor id returns `422`.
+
+## How floors are generated
+
+The floor plan follows the algorithm of the original "The Binding of Isaac"
+as described in the [article](https://www.boristhebrave.com/2020/09/12/dungeon-generation-in-binding-of-isaac/):
+
+1. The floor needs `random(2) + 5 + level * 2.6` rooms, where floor id 0 is level 1.
+2. The start room is placed at cell 35, the middle of the 9 × 8 grid.
+3. The floor grows breadth first from the start room. A neighbour cell only gets a room
+   if it is empty, has at most one filled neighbour, the floor still needs rooms
+   and a random 50 % check passes. Floors with more than 16 rooms grow again from the
+   start room. Rooms that do not add a neighbour are dead ends.
+4. A floor is generated again if it misses its room amount, if the boss room would be
+   next to the start room or if there are not enough dead ends for the special rooms.
+5. The boss room is placed on the farthest dead end, the item room and shop on random
+   dead ends.
+6. The secret room is placed on a random empty cell next to as many rooms as possible
+   and not next to a dead end.
+
+On top of that, this generator adds some features that are not part of the original game:
+
+- a super secret room next to exactly one room, close to the boss room
+- boss rooms that span 1 × 2 or 2 × 2 cells
+- a teleport room to the boss room when the boss room has no space next to it
+- item room and shop are never placed directly next to the start room
 
 ## Floor format
 
