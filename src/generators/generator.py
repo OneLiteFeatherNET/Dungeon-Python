@@ -168,6 +168,7 @@ class Generator:
         number_of_current_rooms = 1
         room_tuple_queue: deque = deque([start_room])  # Room coordinates
         room_tuple_list = []
+        reseeds = 0
         while number_of_current_rooms < number_of_rooms and len(room_tuple_queue) > 0:
             # A queue makes the floor grow evenly in all directions (breadth first)
             room_tuple = room_tuple_queue.popleft()
@@ -179,11 +180,21 @@ class Generator:
                 )
                 if self._add_new_room(new_room_tuple, room_tuple_queue):
                     number_of_current_rooms += 1
-            room_tuple_list.append(room_tuple)
+            if room_tuple != start_room:
+                room_tuple_list.append(room_tuple)
+            if (
+                len(room_tuple_queue) == 0
+                and number_of_current_rooms < number_of_rooms
+                and number_of_rooms > my_globals.START_ROOM_RESEED_MIN_ROOMS
+                and reseeds < my_globals.MAX_START_ROOM_RESEEDS
+            ):
+                # Like in "The Binding of Isaac", big floors grow again from the start
+                room_tuple_queue.append(start_room)
+                reseeds += 1
 
-        while len(room_tuple_queue) > 0:
-            room_tuple_list.append(room_tuple_queue.popleft())
-        room_tuple_list.remove(start_room)
+        room_tuple_list.extend(
+            room_tuple for room_tuple in room_tuple_queue if room_tuple != start_room
+        )
         while len(room_tuple_list) > 0:
             room_tuple = room_tuple_list.pop()
             floor.add_room(room_tuple[0], room_tuple[1])

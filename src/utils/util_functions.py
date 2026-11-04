@@ -44,9 +44,10 @@ def calculate_room_amount(stage_id: int, rng: random.Random) -> int:
     @param rng: random number generator to use
     :return: room amount
     """
-    # Same formula as in "The Binding of Isaac", where the first floor is stage 1
-    stage = stage_id + 1
-    return min(my_globals.MAX_ROOMS, rng.randint(0, 1) + 5 + stage * 10 // 3)
+    # Formula of "The Binding of Isaac": random(2) + 5 + level * 2.6,
+    # where the first floor is level 1. Integers avoid rounding errors.
+    level = stage_id + 1
+    return min(my_globals.MAX_ROOMS, rng.randint(0, 1) + 5 + level * 26 // 10)
 
 
 def place_room(rng: random.Random) -> bool:
