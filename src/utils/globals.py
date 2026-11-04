@@ -42,6 +42,9 @@ DEFAULT_FLOOR_DIRECTORY = "generation"
 FLOOR_WIDTH: int = 9
 FLOOR_HEIGHT: int = 8
 MAX_ROOMS: int = 20
+# Position of the start room, cell 35 in "The Binding of Isaac"
+# where the column 0 of the grid is unused
+START_ROOM_POSITION = (4, 3)
 # A floor is generated again if it has less dead ends than the boss, item and shop room need
 REQUIRED_DEAD_ENDS: int = 3
 # Upper limit for generating a floor again, the last attempt is always kept

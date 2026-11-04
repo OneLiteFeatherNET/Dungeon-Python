@@ -384,6 +384,18 @@ class GeneratorTest(unittest.TestCase):
                             distance = abs(room[0] - start[0]) + abs(room[1] - start[1])
                             self.assertGreater(distance, 1)
 
+    def test_start_room_is_always_cell_35(self):
+        for seed in range(20):
+            with self.subTest(seed=seed):
+                generator = Generator(str(seed), "test", "", seed % 6)
+                generator.generate()
+                start = next(
+                    room
+                    for room in generator._floor.get_rooms()
+                    if room.get_type() == RoomType.START_ROOM
+                )
+                self.assertEqual((4, 3), (start[0], start[1]))
+
     def test_save_writes_the_generated_floor_to_the_given_path(self):
         self._generator.generate()
         with tempfile.TemporaryDirectory() as tmp_dir:

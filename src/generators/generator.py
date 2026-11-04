@@ -162,17 +162,15 @@ class Generator:
             self._stage_id, self._random
         )
 
-        # Add start room
-        start_room: Tuple[int, int] = (
-            self._random.randint(0, my_globals.FLOOR_WIDTH - 1),
-            self._random.randint(0, my_globals.FLOOR_HEIGHT - 1),
-        )
+        # Like in "The Binding of Isaac" the start room is always cell 35
+        start_room: Tuple[int, int] = my_globals.START_ROOM_POSITION
         floor.add_room(start_room[0], start_room[1], RoomType.START_ROOM)
         number_of_current_rooms = 1
         room_tuple_queue: deque = deque([start_room])  # Room coordinates
         room_tuple_list = []
         while number_of_current_rooms < number_of_rooms and len(room_tuple_queue) > 0:
-            room_tuple = room_tuple_queue.pop()
+            # A queue makes the floor grow evenly in all directions (breadth first)
+            room_tuple = room_tuple_queue.popleft()
             for direction in Direction.main_directions():
                 if number_of_current_rooms >= number_of_rooms:
                     break
@@ -184,7 +182,7 @@ class Generator:
             room_tuple_list.append(room_tuple)
 
         while len(room_tuple_queue) > 0:
-            room_tuple_list.append(room_tuple_queue.pop())
+            room_tuple_list.append(room_tuple_queue.popleft())
         room_tuple_list.remove(start_room)
         while len(room_tuple_list) > 0:
             room_tuple = room_tuple_list.pop()
